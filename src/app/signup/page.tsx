@@ -12,24 +12,19 @@ export default function SignupPage() {
   const [sent,       setSent]       = useState(false);
   const [error,      setError]      = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
-
     if (error) {
       setError('Something went wrong. Please try again.');
       setSubmitting(false);
       return;
     }
-
     setSent(true);
     setSubmitting(false);
   };
@@ -43,8 +38,8 @@ export default function SignupPage() {
             <div className="space-y-3">
               <p className="font-serif font-black text-xl text-neutral-900">Check your email.</p>
               <p className="text-sm text-stone-500 leading-relaxed">
-                We sent a magic link to <strong>{email}</strong>.<br />
-                Click it to create your account — no password needed.
+                We sent a sign-in link to <strong>{email}</strong>.<br />
+                Click it to access your account.
               </p>
             </div>
           ) : (
@@ -53,11 +48,12 @@ export default function SignupPage() {
                 <p className="font-serif font-black text-xl text-neutral-900">Create your account.</p>
                 <p className="text-sm text-stone-500 leading-relaxed">
                   Save your profile and matches across devices.<br />
-                  No password needed — we&rsquo;ll email you a magic link.
+                  Enter your email and we&rsquo;ll send you a sign-in link.
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-3 text-left">
+              {/* Email magic link */}
+              <form onSubmit={handleEmail} className="space-y-3 text-left">
                 <input
                   type="email"
                   required
@@ -71,9 +67,9 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full py-2.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {submitting ? 'Sending...' : 'Send magic link'}
+                  {submitting ? 'Sending...' : 'Send sign-in email'}
                 </button>
               </form>
 

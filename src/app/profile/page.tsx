@@ -31,24 +31,11 @@ export default function ProfilePage() {
 
         <h1 className="font-serif font-black text-2xl text-neutral-900">Profile</h1>
 
-        {/* Account status */}
-        {signedIn ? (
+        {/* Account status — only show when signed in */}
+        {signedIn && (
           <div className="bg-white border-2 border-neutral-900 rounded-xl px-5 py-4 shadow-[2px_2px_0_0_#111]">
             <p className="font-semibold text-neutral-900 text-sm">Signed in as {userEmail}</p>
             <p className="text-xs text-stone-500 mt-0.5">Your profile is saved to your account.</p>
-          </div>
-        ) : (
-          <div className="bg-amber-50 border-2 border-amber-400 rounded-xl px-5 py-4 shadow-[2px_2px_0_0_#f59e0b] flex items-center justify-between gap-4">
-            <div>
-              <p className="font-semibold text-neutral-900 text-sm">Your data lives in this browser.</p>
-              <p className="text-xs text-stone-600 mt-0.5">Create an account to save your profile and matches across devices.</p>
-            </div>
-            <button
-              onClick={() => router.push('/signup')}
-              className="shrink-0 px-3 py-1.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-xs rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-            >
-              Create account
-            </button>
           </div>
         )}
 
@@ -84,12 +71,12 @@ export default function ProfilePage() {
         ) : (
           <div className="bg-white border-2 border-neutral-900 rounded-2xl shadow-[4px_4px_0_0_#111] px-8 py-12 text-center space-y-3">
             <p className="font-serif font-black text-xl text-neutral-900">No profile yet</p>
-            <p className="text-sm text-stone-500">Complete onboarding to set up your profile.</p>
+            <p className="text-sm text-stone-500">Create an account to get started.</p>
             <button
-              onClick={() => router.push('/onboarding')}
+              onClick={() => router.push('/signup')}
               className="mt-2 inline-block px-6 py-2.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
             >
-              Get started
+              Create an account
             </button>
           </div>
         )}
