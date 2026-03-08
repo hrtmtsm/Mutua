@@ -28,12 +28,20 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="px-6 py-4 border-b-2 border-neutral-900 flex items-center justify-between bg-[#f5ede0]">
         <span className="font-serif font-black text-xl tracking-tight">Mutua</span>
-        <Link
-          href="/onboarding"
-          className="text-sm font-semibold border-2 border-neutral-900 px-4 py-1.5 rounded-lg bg-white shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-        >
-          Get started
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="text-sm font-semibold px-4 py-1.5 text-stone-600 hover:text-neutral-900 transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/onboarding"
+            className="text-sm font-semibold border-2 border-neutral-900 px-4 py-1.5 rounded-lg bg-white shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+          >
+            Get started
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}
