@@ -40,11 +40,10 @@ export default function WaitlistPage() {
     <AppShell>
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="bg-white border-2 border-neutral-900 rounded-2xl shadow-[5px_5px_0_0_#111] px-10 py-12 max-w-sm w-full text-center space-y-3">
-          <p className="font-serif font-black text-xl text-neutral-900">You&rsquo;re on the list.</p>
+          <p className="font-serif font-black text-xl text-neutral-900">Welcome to Mutua.</p>
           <p className="text-sm text-stone-500 leading-relaxed">
-            We&rsquo;ll notify you as soon as we find a compatible exchange partner for you.
-            <br /><br />
-            Thanks for being one of the first.
+            We&rsquo;re still early, so we don&rsquo;t have a partner match for you just yet.<br /><br />
+            As soon as we find someone compatible, we&rsquo;ll reach out. Stay tuned.
           </p>
         </div>
       </div>
