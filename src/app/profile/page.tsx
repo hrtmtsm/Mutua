@@ -58,12 +58,20 @@ export default function ProfilePage() {
             </div>
 
             {!signedIn && (
-              <button
-                onClick={() => router.push('/signup')}
-                className="w-full py-2.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
-              >
-                Create an account
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push('/signup')}
+                  className="flex-1 py-2.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  Create an account
+                </button>
+                <button
+                  onClick={() => router.push('/login')}
+                  className="flex-1 py-2.5 bg-white text-neutral-900 border-2 border-neutral-900 font-semibold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                >
+                  Sign in
+                </button>
+              </div>
             )}
             <button
               onClick={() => {
