@@ -31,7 +31,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/login"
-            className="text-sm font-semibold text-stone-500 hover:text-neutral-900 transition-colors"
+            className="text-sm font-semibold border-2 border-neutral-900 px-4 py-1.5 rounded-lg bg-white shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
           >
             Sign in
           </Link>
