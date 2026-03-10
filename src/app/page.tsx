@@ -120,14 +120,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="text-center mt-14">
-            <Link
-              href="/onboarding"
-              className="inline-block px-8 py-3.5 bg-blue-500 text-white font-bold text-base rounded-full shadow-md hover:bg-blue-600 transition-all"
-            >
-              Join the waitlist &rarr;
-            </Link>
-          </div>
         </div>
       </section>
 
