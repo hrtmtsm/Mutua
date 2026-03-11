@@ -82,7 +82,7 @@ export default function SessionPage() {
       {/* Header */}
       <div className="px-5 py-4 flex items-center justify-between border-b-2 border-neutral-800">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg border-2 border-amber-400 bg-amber-400 flex items-center justify-center text-xs font-black text-neutral-900 shrink-0">
+          <div className="w-9 h-9 rounded-lg border-2 border-[#2B8FFF] bg-[#2B8FFF] flex items-center justify-center text-xs font-black text-white shrink-0">
             {partner.native_language.slice(0, 2).toUpperCase()}
           </div>
           <div>
@@ -97,7 +97,7 @@ export default function SessionPage() {
 
         <div
           className={`font-serif font-black text-2xl tabular-nums transition-colors ${
-            urgent ? 'text-red-400' : 'text-amber-400'
+            urgent ? 'text-red-400' : 'text-[#60bdff]'
           }`}
         >
           {formatTime(seconds)}
@@ -144,7 +144,7 @@ export default function SessionPage() {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 justify-center">
-          {[partner.goal, partner.availability].map(tag => (
+          {[partner.goal, partner.comm_style].filter(Boolean).map(tag => (
             <span
               key={tag}
               className="px-3 py-1 bg-neutral-900 text-neutral-400 text-xs font-medium border border-neutral-700 rounded"
@@ -215,7 +215,7 @@ export default function SessionPage() {
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleExtend}
-                className="w-full py-3 bg-amber-400 text-neutral-900 border-2 border-amber-400 font-bold rounded-lg hover:bg-amber-300 transition-colors"
+                className="w-full py-3 btn-primary text-white font-bold rounded-lg"
               >
                 Extend 5 more minutes
               </button>
