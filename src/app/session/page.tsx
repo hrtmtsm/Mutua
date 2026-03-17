@@ -253,17 +253,14 @@ export default function SessionPage() {
   const messagesEndRef     = useRef<HTMLDivElement>(null);
   const promptChangedAtRef = useRef<number>(Date.now());
 
-  const [pool, setPool] = useState<Pools>(() => {
-    const stored = localStorage.getItem('mutua_match');
-    const goal   = stored ? (JSON.parse(stored) as MatchResult).partner.goal : '';
-    return buildFallbackPool(goal);
-  });
+  const [pool, setPool] = useState<Pools>(() => buildFallbackPool(''));
 
   useEffect(() => {
     const stored = localStorage.getItem('mutua_match');
     if (!stored) { router.replace('/onboarding'); return; }
     const parsed = JSON.parse(stored) as MatchResult;
     setMatch(parsed);
+    setPool(buildFallbackPool(parsed.partner.goal));
 
     if (isConfigured) {
       const myId      = localStorage.getItem('mutua_session_id') ?? '';
