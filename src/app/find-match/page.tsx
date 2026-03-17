@@ -89,7 +89,7 @@ export default function FindMatchPage() {
     <AppShell>
       <div className="flex-1 flex items-center justify-center px-6">
         {noMatch ? (
-          <div className="bg-white border-2 border-neutral-900 rounded-2xl shadow-[5px_5px_0_0_#111] px-10 py-12 max-w-sm w-full text-center space-y-8">
+          <div className="bg-white border border-stone-200 rounded-2xl shadow-sm px-10 py-12 max-w-sm w-full text-center space-y-8">
 
             {submitted ? (
               <div className="space-y-2">
@@ -116,12 +116,12 @@ export default function FindMatchPage() {
                     onChange={e => setEmail(e.target.value)}
                     placeholder="your@email.com"
                     disabled={submitting}
-                    className="w-full px-4 py-2.5 border-2 border-neutral-900 rounded-lg text-sm text-neutral-900 placeholder:text-stone-400 focus:outline-none disabled:opacity-50"
+                    className="w-full px-4 py-2.5 border border-stone-200 rounded-lg text-sm text-neutral-900 placeholder:text-stone-400 focus:outline-none focus:border-[#2B8FFF] disabled:opacity-50"
                   />
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-2.5 bg-amber-400 text-neutral-900 border-2 border-neutral-900 font-bold text-sm rounded-lg shadow-[2px_2px_0_0_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full py-2.5 btn-primary text-white font-bold text-sm rounded-lg shadow-sm disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {submitting ? 'Saving...' : 'Notify me'}
                   </button>
@@ -131,12 +131,12 @@ export default function FindMatchPage() {
 
           </div>
         ) : (
-          <div className="bg-white border-2 border-neutral-900 rounded-2xl shadow-[5px_5px_0_0_#111] px-10 py-12 max-w-sm w-full text-center space-y-8">
+          <div className="bg-white border border-stone-200 rounded-2xl shadow-sm px-10 py-12 max-w-sm w-full text-center space-y-8">
 
             {/* Spinner */}
             <div className="relative w-14 h-14 mx-auto">
-              <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
-              <div className="absolute inset-0 rounded-full border-4 border-neutral-900 border-t-transparent animate-spin" />
+              <div className="absolute inset-0 rounded-full border-4 border-stone-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-[#2B8FFF] border-t-transparent animate-spin" />
             </div>
 
             {/* Status */}
@@ -150,7 +150,7 @@ export default function FindMatchPage() {
               {[0, 1, 2].map(i => (
                 <div
                   key={i}
-                  className="w-2 h-2 bg-amber-400 border border-neutral-900 rounded-full animate-bounce"
+                  className="w-2 h-2 bg-[#2B8FFF] rounded-full animate-bounce"
                   style={{ animationDelay: `${i * 0.15}s` }}
                 />
               ))}

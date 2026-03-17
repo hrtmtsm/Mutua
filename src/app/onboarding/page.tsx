@@ -129,9 +129,11 @@ export default function OnboardingPage() {
     const sessionId = crypto.randomUUID();
     localStorage.setItem('mutua_session_id', sessionId);
 
+    const trimmedEmail = email.trim().toLowerCase();
     const profile: UserProfile = {
       session_id:         sessionId,
-      email:              email.trim().toLowerCase(),
+      email:              trimmedEmail,
+      name:               trimmedEmail.split('@')[0],
       native_language:    native!,
       learning_language:  learning!,
       goal:               goal!,

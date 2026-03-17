@@ -212,7 +212,7 @@ export default function MatchResultPage() {
         }>;
         setPartners(arr.filter(item => item?.partner).map((item, i) => ({
           id:           item.partner.session_id       ?? `demo-${i}`,
-          name:         item.partner.name             ?? 'Demo partner',
+          name:         item.partner.name             ?? p.email?.split('@')[0] ?? 'Partner',
           nativeLang:   item.partner.native_language,
           learningLang: item.partner.learning_language,
           goal:         item.partner.goal             ?? '',
@@ -232,7 +232,7 @@ export default function MatchResultPage() {
         const p = parsed.partner;
         setPartners([{
           id:           p.session_id ?? 'demo',
-          name:         p.name              ?? 'Demo partner',
+          name:         p.name              ?? p.email?.split('@')[0] ?? 'Partner',
           nativeLang:   p.native_language,
           learningLang: p.learning_language,
           goal:         p.goal              ?? '',
