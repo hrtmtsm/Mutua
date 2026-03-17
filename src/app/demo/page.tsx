@@ -448,7 +448,7 @@ export default function DemoPage() {
       case 'session_ended':
         return <SessionReview partnerName="You (demo)" onSchedule={() => { setPicked(new Set()); setFlow('a_scheduling_again'); }} />;
       case 'a_scheduling_again':
-        return <HomeMatchedB />;
+        return <HomeMatchedB onSchedule={() => setFlow('a_scheduling_again')} />;
       case 'options_sent_again':
         return <HomePickB slots={sentSlots} onPick={() => setFlow('b_picked')} />;
     }
