@@ -212,7 +212,7 @@ export default function MatchResultPage() {
         }>;
         setPartners(arr.filter(item => item?.partner).map((item, i) => ({
           id:           item.partner.session_id       ?? `demo-${i}`,
-          name:         item.partner.name             ?? p.email?.split('@')[0] ?? 'Partner',
+          name:         item.partner.name             ?? 'Partner',
           nativeLang:   item.partner.native_language,
           learningLang: item.partner.learning_language,
           goal:         item.partner.goal             ?? '',
