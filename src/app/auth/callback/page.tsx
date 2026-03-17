@@ -29,6 +29,8 @@ export default function AuthCallbackPage() {
         .from('profiles')
         .select('*')
         .eq('email', session.user.email)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (profile) {
