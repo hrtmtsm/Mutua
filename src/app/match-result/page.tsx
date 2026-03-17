@@ -4,6 +4,23 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMatchBySessionId, type Match } from '@/lib/supabase';
 import { LANG_FLAGS } from '@/lib/constants';
+import TopNav from '@/components/Sidebar';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface PartnerCard {
+  id:           string;
+  name:         string;
+  nativeLang:   string;
+  learningLang: string;
+  goal:         string;
+  commStyle:    string;
+  frequency:    string;
+  reasons:      string[];
+  suggestedTime: string;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const LANG_COLORS: Record<string, string> = {
   Japanese:   '#3b82f6',
@@ -18,12 +35,15 @@ const LANG_COLORS: Record<string, string> = {
   Arabic:     '#14b8a6',
 };
 
-function Avatar({ name, lang }: { name: string; lang: string }) {
+function Avatar({ name, lang, size = 'md' }: { name: string; lang: string; size?: 'sm' | 'md' }) {
   const bg = LANG_COLORS[lang] ?? '#3b82f6';
+  const cls = size === 'sm'
+    ? 'w-10 h-10 text-sm'
+    : 'w-12 h-12 text-base';
   return (
     <div
       style={{ backgroundColor: bg }}
-      className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-white text-lg shrink-0"
+      className={`${cls} rounded-xl flex items-center justify-center font-black text-white shrink-0`}
     >
       {name.trim().slice(0, 2).toUpperCase()}
     </div>
@@ -31,61 +51,151 @@ function Avatar({ name, lang }: { name: string; lang: string }) {
 }
 
 function getSuggestedTime(frequency?: string): string {
-  const now  = new Date();
+  const now = new Date();
   let daysAhead = 3;
-  if      (frequency === 'Every day')          daysAhead = 1;
-  else if (frequency === '2–3 times a week')   daysAhead = 2;
-  else if (frequency === 'Once a week')        daysAhead = 5;
-
+  if      (frequency === 'Every day')         daysAhead = 1;
+  else if (frequency === '2–3 times a week')  daysAhead = 2;
+  else if (frequency === 'Once a week')       daysAhead = 5;
   const date = new Date(now);
   date.setDate(now.getDate() + daysAhead);
-
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  }) + ' at 7:00 PM';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · 7:00 PM';
 }
+
+function generateAlternateSlots(suggestedTime: string): string[] {
+  const now = new Date();
+  return [
+    { days: 1, time: '7:00 PM' },
+    { days: 2, time: '8:00 PM' },
+    { days: 3, time: '6:30 PM' },
+    { days: 4, time: '9:00 AM' },
+    { days: 5, time: '10:00 AM' },
+    { days: 6, time: '7:00 PM' },
+  ]
+    .map(({ days, time }) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() + days);
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + time;
+    })
+    .filter(s => s !== suggestedTime)
+    .slice(0, 4);
+}
+
+function partnerFromMatch(m: Match, sessionId: string): PartnerCard {
+  const isA = m.session_id_a === sessionId;
+  const frequency = m.practice_frequency ?? '';
+  const suggestedTime = m.suggested_time
+    ? new Date(m.suggested_time).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric',
+      }) + ' · 7:00 PM'
+    : getSuggestedTime(frequency);
+  return {
+    id:           isA ? (m.session_id_b) : (m.session_id_a),
+    name:         isA ? (m.name_b  ?? 'Your partner') : (m.name_a  ?? 'Your partner'),
+    nativeLang:   isA ? m.native_language_b            :  m.native_language_a,
+    learningLang: isA ? m.native_language_a            :  m.native_language_b,
+    goal:         m.goal      ?? '',
+    commStyle:    m.comm_style ?? '',
+    frequency,
+    reasons:      m.reasons   ?? [],
+    suggestedTime,
+  };
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function PartnerRow({
+  partner,
+  onConfirm,
+  onSeeOtherTimes,
+}: {
+  partner: PartnerCard;
+  onConfirm: () => void;
+  onSeeOtherTimes: () => void;
+}) {
+  const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
+  const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-stone-300 transition-all">
+
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 flex items-center gap-4">
+        <Avatar name={partner.name} lang={partner.nativeLang} />
+        <div>
+          <p className="font-bold text-neutral-900 text-lg leading-tight">{partner.name}</p>
+        </div>
+      </div>
+
+      {/* Language blocks */}
+      <div className="px-6 pb-4 grid grid-cols-2 gap-3">
+        <div className="bg-stone-50 border border-stone-100 rounded-xl px-4 py-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Native</p>
+          <p className="font-bold text-neutral-900 text-base">{nativeFlag} {partner.nativeLang}</p>
+        </div>
+        <div className="bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Practicing</p>
+          <p className="font-bold text-neutral-900 text-base">{learningFlag} {partner.learningLang}</p>
+        </div>
+      </div>
+
+      {/* Why you match */}
+      {partner.reasons.length > 0 && (
+        <div className="px-6 pb-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">In common</p>
+          <div className="flex flex-wrap gap-1.5">
+            {partner.reasons.slice(0, 3).map((r, i) => (
+              <span key={i} className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
+                {r}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Suggested time + actions */}
+      <div className="px-6 pb-5 pt-4 border-t border-stone-100 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs text-stone-400">Suggested first session</p>
+          <p className="font-semibold text-neutral-900 text-sm mt-0.5">{partner.suggestedTime}</p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={onSeeOtherTimes}
+            className="text-sm text-stone-400 hover:text-neutral-900 font-medium transition-colors"
+          >
+            Other times
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-5 py-2.5 btn-primary text-white text-sm font-bold rounded-xl shadow-sm"
+          >
+            Confirm session →
+          </button>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MatchResultPage() {
   const router = useRouter();
-
-  const [partnerName,     setPartnerName]     = useState('');
-  const [partnerNative,   setPartnerNative]   = useState('');
-  const [partnerLearning, setPartnerLearning] = useState('');
-  const [reasons,         setReasons]         = useState<string[]>([]);
-  const [suggestedTime,   setSuggestedTime]   = useState('');
-  const [goal,            setGoal]            = useState('');
-  const [commStyle,       setCommStyle]       = useState('');
-  const [frequency,       setFrequency]       = useState('');
-  const [match,           setMatch]           = useState<Match | null>(null);
-  const [loading,         setLoading]         = useState(true);
-  const [noMatch,         setNoMatch]         = useState(false);
+  const [partners, setPartners] = useState<PartnerCard[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [noMatch,  setNoMatch]  = useState(false);
 
   useEffect(() => {
     async function load() {
       const sessionId = localStorage.getItem('mutua_session_id');
       if (!sessionId) { router.replace('/onboarding'); return; }
 
-      // Try Supabase first
+      // Try Supabase
       try {
         const m = await getMatchBySessionId(sessionId);
         if (m) {
-          const isA = m.session_id_a === sessionId;
-          setPartnerName(    isA ? (m.name_b  ?? 'Your partner') : (m.name_a  ?? 'Your partner'));
-          setPartnerNative(  isA ? m.native_language_b           :  m.native_language_a);
-          setPartnerLearning(isA ? m.native_language_a           :  m.native_language_b);
-          setGoal(     m.goal            ?? '');
-          setCommStyle(m.comm_style      ?? '');
-          setFrequency(m.practice_frequency ?? '');
-          setReasons(  m.reasons         ?? []);
-          setSuggestedTime(
-            m.suggested_time
-              ? new Date(m.suggested_time).toLocaleDateString('en-US', {
-                  weekday: 'long', month: 'long', day: 'numeric',
-                  hour: 'numeric', minute: '2-digit',
-                })
-              : getSuggestedTime(m.practice_frequency),
-          );
-          setMatch(m);
+          setPartners([partnerFromMatch(m, sessionId)]);
           setLoading(false);
           return;
         }
@@ -93,19 +203,44 @@ export default function MatchResultPage() {
         console.error('getMatchBySessionId error:', err);
       }
 
-      // Fallback to localStorage (demo / dev mode)
-      const stored = localStorage.getItem('mutua_match');
-      if (stored) {
-        const parsed = JSON.parse(stored);
+      // Fallback: mutua_partners (array, for demo with multiple partners)
+      const multi = localStorage.getItem('mutua_partners');
+      if (multi) {
+        const arr = JSON.parse(multi) as Array<{
+          partner: { session_id?: string; name?: string; native_language: string; learning_language: string; goal?: string; comm_style?: string; practice_frequency?: string };
+          reasons?: string[];
+        }>;
+        setPartners(arr.filter(item => item?.partner).map((item, i) => ({
+          id:           item.partner.session_id       ?? `demo-${i}`,
+          name:         item.partner.name             ?? 'Demo partner',
+          nativeLang:   item.partner.native_language,
+          learningLang: item.partner.learning_language,
+          goal:         item.partner.goal             ?? '',
+          commStyle:    item.partner.comm_style       ?? '',
+          frequency:    item.partner.practice_frequency ?? '',
+          reasons:      item.reasons                  ?? [],
+          suggestedTime: getSuggestedTime(item.partner.practice_frequency),
+        })));
+        setLoading(false);
+        return;
+      }
+
+      // Fallback: mutua_match (single partner, legacy)
+      const single = localStorage.getItem('mutua_match');
+      if (single) {
+        const parsed = JSON.parse(single);
         const p = parsed.partner;
-        setPartnerName(    p.name              ?? 'Demo partner');
-        setPartnerNative(  p.native_language);
-        setPartnerLearning(p.learning_language);
-        setGoal(     p.goal            ?? '');
-        setCommStyle(p.comm_style      ?? '');
-        setFrequency(p.practice_frequency ?? '');
-        setReasons(  parsed.reasons    ?? []);
-        setSuggestedTime(getSuggestedTime(p.practice_frequency));
+        setPartners([{
+          id:           p.session_id ?? 'demo',
+          name:         p.name              ?? 'Demo partner',
+          nativeLang:   p.native_language,
+          learningLang: p.learning_language,
+          goal:         p.goal              ?? '',
+          commStyle:    p.comm_style        ?? '',
+          frequency:    p.practice_frequency ?? '',
+          reasons:      parsed.reasons      ?? [],
+          suggestedTime: getSuggestedTime(p.practice_frequency),
+        }]);
         setLoading(false);
         return;
       }
@@ -116,113 +251,67 @@ export default function MatchResultPage() {
     load();
   }, [router]);
 
-  const handleConfirm = () => {
-    const isA = match?.session_id_a === localStorage.getItem('mutua_session_id');
-    const partner = {
-      partner_id:         match ? (isA ? match.session_id_b : match.session_id_a) : 'demo',
-      name:               partnerName,
-      native_language:    partnerNative,
-      learning_language:  partnerLearning,
-      goal,
-      comm_style:         commStyle,
-      practice_frequency: frequency,
+  const savePartner = (p: PartnerCard) => {
+    localStorage.setItem('mutua_current_partner', JSON.stringify({
+      partner_id:         p.id,
+      name:               p.name,
+      native_language:    p.nativeLang,
+      learning_language:  p.learningLang,
+      goal:               p.goal,
+      comm_style:         p.commStyle,
+      practice_frequency: p.frequency,
       saved_at:           new Date().toISOString(),
-    };
-    localStorage.setItem('mutua_current_partner', JSON.stringify(partner));
-    router.push('/pre-session');
+    }));
   };
+
+  const handleConfirm = (p: PartnerCard) => {
+    savePartner(p);
+    localStorage.setItem('mutua_scheduled_time', p.suggestedTime);
+    router.push('/session-confirmed');
+  };
+
+  const handleSeeOtherTimes = (p: PartnerCard) => {
+    savePartner(p);
+    localStorage.setItem('mutua_session_slots', JSON.stringify(generateAlternateSlots(p.suggestedTime)));
+    router.push('/session-schedule');
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-stone-400 text-sm">Loading your match...</p>
+      <p className="text-stone-400 text-sm">Loading your partners...</p>
     </div>
   );
 
   if (noMatch) return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center space-y-3">
-        <p className="font-serif font-black text-xl text-neutral-900">No match yet</p>
-        <p className="text-sm text-stone-500">We'll email you as soon as we find someone compatible.</p>
+        <p className="font-serif font-black text-xl text-neutral-900">No partners yet</p>
+        <p className="text-sm text-stone-500 max-w-xs">We'll email you as soon as we find someone compatible.</p>
       </div>
     </div>
   );
 
-  const flag = LANG_FLAGS[partnerNative] ?? '';
-
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
-      <nav className="px-6 py-4 border-b border-stone-100">
-        <span className="font-serif font-black text-xl text-neutral-900">Mutua</span>
-      </nav>
+      <TopNav />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-10">
-        <div className="max-w-md w-full space-y-4">
-
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#2B8FFF] text-center mb-2">
-            You matched
-          </p>
-
-          {/* Partner */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <div className="flex items-center gap-4">
-              <Avatar name={partnerName} lang={partnerNative} />
-              <div>
-                <p className="font-serif font-black text-2xl text-neutral-900 leading-tight">{partnerName}</p>
-                <p className="text-sm text-stone-500 mt-1">
-                  {flag} Native {partnerNative} · Learning {partnerLearning}
-                </p>
-                {goal && (
-                  <span className="inline-block mt-2 px-2.5 py-0.5 bg-sky-50 border border-sky-200 text-xs font-semibold text-[#2B8FFF] rounded-full">
-                    {goal}
-                  </span>
-                )}
-              </div>
-            </div>
+      <main className="flex-1 flex flex-col items-center px-6 py-10">
+        <div className="max-w-2xl w-full space-y-4">
+          <div className="mb-2">
+            <p className="font-serif font-black text-2xl text-neutral-900">Session</p>
+            <h2 className="text-lg font-semibold text-neutral-700 mt-1">Compatible partners for you</h2>
           </div>
-
-          {/* Why you matched */}
-          {reasons.length > 0 && (
-            <div className="bg-sky-50 border border-sky-100 rounded-2xl p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-stone-400 mb-3">
-                Why you matched
-              </p>
-              <ul className="space-y-2.5">
-                {reasons.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-stone-700 leading-relaxed">
-                    <span className="text-[#2B8FFF] font-black mt-0.5 shrink-0">•</span>
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Suggested session */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-stone-400 mb-2">
-              Suggested first session
-            </p>
-            <p className="font-serif font-black text-xl text-neutral-900 mb-1">{suggestedTime}</p>
-            <p className="text-xs text-stone-400">Based on your timezone and practice goals</p>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-3 pt-1">
-            <button
-              onClick={handleConfirm}
-              className="w-full py-4 btn-primary text-white font-bold text-base rounded-xl shadow-md"
-            >
-              Confirm session →
-            </button>
-            <button
-              onClick={() => {}}
-              className="w-full py-3 border border-stone-200 bg-white text-neutral-600 font-semibold text-sm rounded-xl hover:border-stone-300 transition-all"
-            >
-              See other times
-            </button>
-          </div>
-
+          {partners.map(p => (
+            <PartnerRow
+              key={p.id}
+              partner={p}
+              onConfirm={() => handleConfirm(p)}
+              onSeeOtherTimes={() => handleSeeOtherTimes(p)}
+            />
+          ))}
         </div>
       </main>
     </div>

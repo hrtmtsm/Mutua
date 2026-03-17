@@ -48,6 +48,7 @@ export interface UserProfile {
   availability?:       Availability;      // deprecated — kept for legacy rows
   practice_frequency?: Frequency;
   name?:               string;            // display name — not persisted to DB
+  avatar_url?:         string;            // profile photo URL — optional
   created_at?:         string;
 }
 
