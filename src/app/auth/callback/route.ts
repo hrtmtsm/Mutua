@@ -10,9 +10,26 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
-    await supabase.auth.exchangeCodeForSession(code);
+
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error && data.session?.user?.email) {
+      const email = data.session.user.email;
+
+      // Look up their existing profile by email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('session_id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (profile?.session_id) {
+        // Restore their session on the client via a redirect
+        return NextResponse.redirect(`${origin}/auth/restore?sid=${profile.session_id}`);
+      }
+    }
   }
 
-  // Redirect to profile after sign-in
-  return NextResponse.redirect(`${origin}/profile`);
+  // No code or no profile found — send to onboarding
+  return NextResponse.redirect(`${origin}/onboarding`);
 }
