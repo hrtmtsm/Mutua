@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getMatchBySessionId, type Match } from '@/lib/supabase';
+import { supabase, getMatchBySessionId, type Match } from '@/lib/supabase';
 import { LANG_FLAGS } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
@@ -284,36 +284,67 @@ export default function SessionPage() {
   const [confirmed,  setConfirmed]  = useState(false);
 
   useEffect(() => {
-    // Load upcoming session
-    const partnerRaw = localStorage.getItem('mutua_current_partner');
-    const time       = localStorage.getItem('mutua_scheduled_time');
-    if (partnerRaw && time) {
-      const p = JSON.parse(partnerRaw);
-      setUpcoming({
-        partnerId:    p.partner_id        ?? '',
-        partnerName:  p.name              ?? 'Your partner',
-        nativeLang:   p.native_language   ?? '',
-        learningLang: p.learning_language ?? '',
-        reasons:      p.reasons           ?? [],
-        scheduledTime: time,
-        status:       time.includes(' / ') ? 'scheduling' : 'confirmed',
-      });
-    }
-
-    // Load compatible partners
+    // Load compatible partners (also refreshes upcoming partner name)
     async function loadPartners() {
       const sessionId = localStorage.getItem('mutua_session_id');
       if (sessionId) {
         try {
           const m = await getMatchBySessionId(sessionId);
           if (m) {
-            setPartners([partnerFromMatch(m, sessionId)]);
+            const isA = m.session_id_a === sessionId;
+            const partnerSessionId = isA ? m.session_id_b : m.session_id_a;
+
+            // Fetch fresh partner name from profiles
+            const { data: partnerProfile } = await supabase
+              .from('profiles')
+              .select('name, avatar_url')
+              .eq('session_id', partnerSessionId)
+              .maybeSingle();
+
+            const card = partnerFromMatch(m, sessionId);
+            if (partnerProfile?.name) card.name = partnerProfile.name;
+
+            setPartners([card]);
+
+            // Also update upcoming session if it's for this partner
+            const partnerRaw = localStorage.getItem('mutua_current_partner');
+            const time       = localStorage.getItem('mutua_scheduled_time');
+            if (partnerRaw && time) {
+              const p = JSON.parse(partnerRaw);
+              const freshName = partnerProfile?.name ?? p.name ?? 'Your partner';
+              setUpcoming({
+                partnerId:    p.partner_id        ?? '',
+                partnerName:  freshName,
+                nativeLang:   p.native_language   ?? '',
+                learningLang: p.learning_language ?? '',
+                reasons:      p.reasons           ?? [],
+                scheduledTime: time,
+                status:       m.status === 'confirmed' ? 'confirmed' : (time.includes(' / ') ? 'scheduling' : 'confirmed'),
+              });
+            }
+
             setLoading(false);
             return;
           }
         } catch (err) {
           console.error('getMatchBySessionId error:', err);
         }
+      }
+
+      // Fallback: load upcoming from localStorage only
+      const partnerRaw = localStorage.getItem('mutua_current_partner');
+      const time       = localStorage.getItem('mutua_scheduled_time');
+      if (partnerRaw && time) {
+        const p = JSON.parse(partnerRaw);
+        setUpcoming({
+          partnerId:    p.partner_id        ?? '',
+          partnerName:  p.name              ?? 'Your partner',
+          nativeLang:   p.native_language   ?? '',
+          learningLang: p.learning_language ?? '',
+          reasons:      p.reasons           ?? [],
+          scheduledTime: time,
+          status:       time.includes(' / ') ? 'scheduling' : 'confirmed',
+        });
       }
 
       const multi = localStorage.getItem('mutua_partners');

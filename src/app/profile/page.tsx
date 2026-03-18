@@ -76,11 +76,13 @@ export default function ProfilePage() {
     if (!profile || !draftName.trim()) return;
     setSaving(true);
     const trimmed = draftName.trim();
-    await supabase.from('profiles').update({ name: trimmed }).eq('session_id', profile.session_id);
-    await Promise.all([
-      supabase.from('matches').update({ name_a: trimmed }).eq('session_id_a', profile.session_id),
-      supabase.from('matches').update({ name_b: trimmed }).eq('session_id_b', profile.session_id),
-    ]);
+
+    await fetch('/api/update-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: profile.session_id, name: trimmed }),
+    });
+
     const stored = localStorage.getItem('mutua_profile');
     if (stored) localStorage.setItem('mutua_profile', JSON.stringify({ ...JSON.parse(stored), name: trimmed }));
     setProfile(p => p ? { ...p, name: trimmed } : p);

@@ -33,21 +33,16 @@ export default function WelcomePage() {
     const { error: pwError } = await supabase.auth.updateUser({ password });
     if (pwError) { setError(pwError.message); setLoading(false); return; }
 
-    // Save name to profiles table
+    // Save name to profiles + matches via service-role API (bypasses RLS)
     const sessionId = localStorage.getItem('mutua_session_id');
     if (sessionId) {
       const trimmed = name.trim();
 
-      await supabase
-        .from('profiles')
-        .update({ name: trimmed })
-        .eq('session_id', sessionId);
-
-      // Also update name in matches table (stored at match-creation time, now stale)
-      await Promise.all([
-        supabase.from('matches').update({ name_a: trimmed }).eq('session_id_a', sessionId),
-        supabase.from('matches').update({ name_b: trimmed }).eq('session_id_b', sessionId),
-      ]);
+      await fetch('/api/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, name: trimmed }),
+      });
 
       // Keep localStorage in sync
       const stored = localStorage.getItem('mutua_profile');

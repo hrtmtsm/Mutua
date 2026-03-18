@@ -12,7 +12,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user?.email) return;
+      if (!session?.user?.email) { setChecking(false); return; }
       // Restore profile to localStorage before redirecting
       const { data: profile } = await supabase
         .from('profiles')
@@ -28,6 +28,7 @@ export default function SignInPage() {
       router.replace('/find-match');
     });
   }, [router]);
+  const [checking, setChecking] = useState(true);
   const [show,     setShow]     = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
@@ -61,6 +62,12 @@ export default function SignInPage() {
     router.replace('/find-match');
   };
 
+
+  if (checking) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#2B8FFF] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
