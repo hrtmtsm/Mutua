@@ -115,12 +115,6 @@ export default function WelcomePage() {
 
         </form>
 
-        <button
-          onClick={() => router.replace('/find-match')}
-          className="w-full text-center text-sm text-stone-400 hover:text-neutral-900 transition-colors"
-        >
-          Skip for now
-        </button>
 
       </div>
     </div>
