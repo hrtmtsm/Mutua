@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getMatchBySessionId, type Match } from '@/lib/supabase';
+import { supabase, getMatchBySessionId, type Match } from '@/lib/supabase';
 import { LANG_FLAGS } from '@/lib/constants';
 import TopNav from '@/components/Sidebar';
 
@@ -222,9 +222,21 @@ export default function MatchResultPage() {
         const m = await getMatchBySessionId(sessionId);
         if (m) {
           const isA = m.session_id_a === sessionId;
+          const partnerSessionId = isA ? m.session_id_b : m.session_id_a;
           setMatchId(m.id);
           setPartnerEmail(isA ? (m.email_b ?? null) : (m.email_a ?? null));
-          setPartners([partnerFromMatch(m, sessionId)]);
+
+          // Fetch partner's current name from profiles (matches table name may be stale)
+          const { data: partnerProfile } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('session_id', partnerSessionId)
+            .maybeSingle();
+
+          const card = partnerFromMatch(m, sessionId);
+          if (partnerProfile?.name) card.name = partnerProfile.name;
+
+          setPartners([card]);
           setLoading(false);
           return;
         }
