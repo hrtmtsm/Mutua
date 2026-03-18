@@ -79,7 +79,7 @@ export default function WelcomePage() {
           {/* Name */}
           <div>
             <label className="text-xs font-semibold text-stone-500 mb-1.5 block">
-              First name
+              Name
             </label>
             <input
               type="text"
