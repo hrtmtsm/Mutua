@@ -128,7 +128,7 @@ export default function SignInPage() {
           disabled={loading}
           className="w-full py-3 border border-stone-200 rounded-xl text-sm font-semibold text-neutral-900 hover:border-stone-400 transition-all disabled:opacity-40"
         >
-          Send magic link instead
+          Email me a sign-in link instead
         </button>
 
       </div>
