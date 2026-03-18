@@ -53,70 +53,95 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-7">
+    <div className="min-h-screen flex items-center justify-center px-6 bg-white">
+      <div className="w-full max-w-sm">
 
-        <div>
-          <p className="font-serif font-black text-3xl text-neutral-900 mb-3">Mutua</p>
-          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Welcome back!</p>
-          <p className="font-serif font-black text-2xl text-neutral-900">One last thing.</p>
-          <p className="text-sm text-stone-500 mt-1">
-            Your partner will see your name. Set a password so you can sign in anytime.
+        {/* Brand */}
+        <p className="text-sm font-bold text-[#2B8FFF] mb-10 tracking-tight">Mutua</p>
+
+        {/* Heading */}
+        <div className="mb-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400 mb-3">
+            Welcome back
+          </p>
+          <h1 className="font-serif font-black text-neutral-900 leading-[1.05] mb-3"
+              style={{ fontSize: 'clamp(32px, 8vw, 42px)' }}>
+            One last<br />thing.
+          </h1>
+          <p className="text-sm text-stone-500 leading-relaxed">
+            Your partner will see your name.<br />
+            Set a password so you can sign in anytime.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Name */}
-          <input
-            type="text"
-            required
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Your first name"
-            autoFocus
-            className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-400 focus:outline-none focus:border-[#2B8FFF]"
-          />
-
-          {/* Email — read-only */}
-          <input
-            type="email"
-            value={email}
-            readOnly
-            className="w-full px-4 py-3 border border-stone-100 rounded-xl text-sm text-stone-400 bg-stone-50 cursor-default focus:outline-none"
-          />
-
-          {/* Password */}
-          <div className="relative">
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1.5 block">
+              First name
+            </label>
             <input
-              type={show ? 'text' : 'password'}
+              type="text"
               required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Create a password (min. 8 chars)"
-              className="w-full px-4 py-3 pr-14 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-400 focus:outline-none focus:border-[#2B8FFF]"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Haruto"
+              autoFocus
+              className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-300 focus:outline-none focus:border-[#2B8FFF] focus:ring-2 focus:ring-[#2B8FFF]/10 transition-all"
             />
-            <button
-              type="button"
-              onClick={() => setShow(s => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-neutral-900 font-medium"
-            >
-              {show ? 'Hide' : 'Show'}
-            </button>
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {/* Email — read-only */}
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1.5 block">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              readOnly
+              className="w-full px-4 py-3 border border-stone-100 rounded-xl text-sm text-stone-400 bg-stone-50 cursor-default focus:outline-none"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1.5 block">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={show ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+                className="w-full px-4 py-3 pr-14 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-300 focus:outline-none focus:border-[#2B8FFF] focus:ring-2 focus:ring-[#2B8FFF]/10 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShow(s => !s)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-neutral-700 font-semibold transition-colors"
+              >
+                {show ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-500 font-medium">{error}</p>
+          )}
 
           <button
             type="submit"
-            disabled={loading || !name.trim() || !password}
-            className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-40"
+            disabled={loading || !name.trim() || password.length < 8}
+            className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none mt-2"
           >
-            {loading ? 'Saving...' : 'Continue'}
+            {loading ? 'Saving...' : 'Continue →'}
           </button>
 
         </form>
-
 
       </div>
     </div>
