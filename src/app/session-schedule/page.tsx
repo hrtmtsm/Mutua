@@ -70,10 +70,10 @@ export default function SessionSchedulePage() {
   useEffect(() => {
     const stored = localStorage.getItem('mutua_session_slots');
     setSlots(stored ? JSON.parse(stored) : generateSuggestedSlots());
-    const session = localStorage.getItem('mutua_last_session');
-    if (session) {
-      const { partnerName: n } = JSON.parse(session);
-      if (n) setPartnerName(n);
+    const partner = localStorage.getItem('mutua_current_partner');
+    if (partner) {
+      const { name } = JSON.parse(partner);
+      if (name) setPartnerName(name);
     }
   }, []);
 
@@ -89,8 +89,28 @@ export default function SessionSchedulePage() {
     const primary = labels[0];
     setSelected(primary);
     const history = JSON.parse(localStorage.getItem('mutua_history') ?? '[]');
-    if (history[0]) { history[0].scheduledFor = labels.join(' / '); localStorage.setItem('mutua_history', JSON.stringify(history)); }
-    localStorage.setItem('mutua_scheduled_time', labels.join(' / '));
+    if (history[0]) { history[0].scheduledFor = primary; localStorage.setItem('mutua_history', JSON.stringify(history)); }
+    localStorage.setItem('mutua_scheduled_time', primary);
+
+    // Confirm session in DB + notify partner (fire-and-forget)
+    const matchId      = localStorage.getItem('mutua_match_id');
+    const partnerEmail = localStorage.getItem('mutua_partner_email');
+    const myProfile    = localStorage.getItem('mutua_profile');
+    const myName       = myProfile ? (JSON.parse(myProfile).name ?? '') : '';
+    if (matchId && partnerEmail) {
+      fetch('/api/confirm-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId,
+          partnerEmail,
+          partnerName:   partnerName,
+          scheduledTime: primary,
+          confirmerName: myName,
+        }),
+      }).catch(() => {});
+    }
+
     setConfirmed(true);
     setTimeout(() => router.push('/app'), 1800);
   };

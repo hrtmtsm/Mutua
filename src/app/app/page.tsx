@@ -304,6 +304,11 @@ export default function SessionPage() {
             const card = partnerFromMatch(m, sessionId);
             if (partnerProfile?.name) card.name = partnerProfile.name;
 
+            // Persist match context for session-schedule page
+            const partnerEmail = isA ? (m.email_b ?? '') : (m.email_a ?? '');
+            localStorage.setItem('mutua_match_id', m.id);
+            localStorage.setItem('mutua_partner_email', partnerEmail);
+
             setPartners([card]);
 
             // Also update upcoming session if it's for this partner

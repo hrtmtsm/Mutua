@@ -331,6 +331,8 @@ export default function MatchResultPage() {
 
   const handleSeeOtherTimes = (p: PartnerCard) => {
     savePartner(p);
+    if (matchId) localStorage.setItem('mutua_match_id', matchId);
+    if (partnerEmail) localStorage.setItem('mutua_partner_email', partnerEmail);
     localStorage.setItem('mutua_session_slots', JSON.stringify(generateAlternateSlots(p.suggestedTime)));
     router.push('/session-schedule');
   };
