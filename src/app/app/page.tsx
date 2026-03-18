@@ -319,7 +319,7 @@ export default function SessionPage() {
                 learningLang: p.learning_language ?? '',
                 reasons:      p.reasons           ?? [],
                 scheduledTime: time,
-                status:       m.status === 'confirmed' ? 'confirmed' : (time.includes(' / ') ? 'scheduling' : 'confirmed'),
+                status:       m.status === 'confirmed' ? 'confirmed' : 'scheduling',
               });
             }
 
@@ -343,7 +343,7 @@ export default function SessionPage() {
           learningLang: p.learning_language ?? '',
           reasons:      p.reasons           ?? [],
           scheduledTime: time,
-          status:       time.includes(' / ') ? 'scheduling' : 'confirmed',
+          status:       'scheduling',
         });
       }
 
