@@ -57,7 +57,7 @@ export default function WelcomePage() {
 
       {/* Nav */}
       <nav className="px-8 py-5 shrink-0">
-        <span className="text-lg font-black text-neutral-900 tracking-tight">Mutua</span>
+        <span className="font-serif font-black text-2xl tracking-tight text-neutral-900">Mutua</span>
       </nav>
 
       {/* Centered form */}
@@ -86,7 +86,7 @@ export default function WelcomePage() {
               required
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Haruto"
+              placeholder="Your first name"
               autoFocus
               className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-300 focus:outline-none focus:border-[#2B8FFF] focus:ring-2 focus:ring-[#2B8FFF]/10 transition-all"
             />
