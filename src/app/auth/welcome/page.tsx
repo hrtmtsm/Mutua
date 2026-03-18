@@ -57,8 +57,9 @@ export default function WelcomePage() {
       <div className="w-full max-w-sm space-y-7">
 
         <div>
-          <p className="font-serif font-black text-3xl text-neutral-900 mb-1">Mutua</p>
-          <p className="font-serif font-black text-2xl text-neutral-900">Welcome back!</p>
+          <p className="font-serif font-black text-3xl text-neutral-900 mb-3">Mutua</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Welcome back!</p>
+          <p className="font-serif font-black text-2xl text-neutral-900">One last thing.</p>
           <p className="text-sm text-stone-500 mt-1">
             Your partner will see your name. Set a password so you can sign in anytime.
           </p>
