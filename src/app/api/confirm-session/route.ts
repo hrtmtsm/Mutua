@@ -4,7 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-function emailHtml(partnerName: string, scheduledTime: string, magicLink: string): string {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://trymutua.com';
+
+function emailHtml(partnerName: string, scheduledTime: string): string {
+  const signInUrl = `${APP_URL}/auth/send`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -45,7 +48,7 @@ function emailHtml(partnerName: string, scheduledTime: string, magicLink: string
               <table cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="background:linear-gradient(160deg,#60bdff 0%,#2B8FFF 40%,#1060d8 100%);border-radius:12px;box-shadow:0 4px 14px rgba(43,143,255,0.35)">
-                    <a href="${magicLink}" style="display:inline-block;padding:16px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:-0.2px;">
+                    <a href="${signInUrl}" style="display:inline-block;padding:16px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:-0.2px;">
                       View session details →
                     </a>
                   </td>
@@ -89,32 +92,16 @@ export async function POST(request: Request) {
     .update({ status: 'confirmed' })
     .eq('id', matchId);
 
-  // Generate magic link for partner
-  const { data, error: linkError } = await adminClient.auth.admin.generateLink({
-    type: 'magiclink',
-    email: partnerEmail,
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-    },
-  });
-
-  if (linkError || !data?.properties?.action_link) {
-    // Still success — DB updated, just skip email
-    return NextResponse.json({ success: true, emailSent: false });
-  }
-
   const displayName = confirmerName ?? 'Your partner';
 
   const { error: sendError } = await resend.emails.send({
     from: 'Mutua <hello@trymutua.com>',
     to: partnerEmail,
     subject: `${displayName} confirmed your first session`,
-    html: emailHtml(displayName, scheduledTime, data.properties.action_link),
+    html: emailHtml(displayName, scheduledTime),
   });
 
-  if (sendError) {
-    return NextResponse.json({ success: true, emailSent: false, emailError: sendError.message });
-  }
+  if (sendError) return NextResponse.json({ success: true, emailSent: false });
 
   return NextResponse.json({ success: true, emailSent: true });
 }

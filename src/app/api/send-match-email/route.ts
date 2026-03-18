@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://trymutua.com';
 
-function emailHtml(magicLink: string): string {
+function emailHtml(): string {
+  const signInUrl = `${APP_URL}/auth/send`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -40,14 +37,14 @@ function emailHtml(magicLink: string): string {
                 Someone who speaks <strong style="color:#111;">Japanese</strong> natively and wants to practice <strong style="color:#111;">English</strong> — just like you — is ready to connect on Mutua.
               </p>
               <p style="margin:0 0 32px;font-size:15px;color:#666666;line-height:1.6;">
-                This is your shot to actually practice with a real person. No more apps, no more solo studying.
+                Sign in to see who you matched with.
               </p>
 
               <!-- CTA -->
               <table cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="background:linear-gradient(160deg,#60bdff 0%,#2B8FFF 40%,#1060d8 100%);border-radius:12px;box-shadow:0 4px 14px rgba(43,143,255,0.35)">
-                    <a href="${magicLink}" style="display:inline-block;padding:16px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:-0.2px;">
+                    <a href="${signInUrl}" style="display:inline-block;padding:16px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:-0.2px;">
                       Meet your partner →
                     </a>
                   </td>
@@ -78,29 +75,11 @@ export async function POST(request: Request) {
   const { email } = await request.json();
   if (!email) return NextResponse.json({ error: 'email required' }, { status: 400 });
 
-  // Generate magic link via Supabase Admin
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-
-  const { data, error: linkError } = await adminClient.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-    },
-  });
-
-  if (linkError || !data?.properties?.action_link) {
-    return NextResponse.json({ error: linkError?.message ?? 'Failed to generate link' }, { status: 500 });
-  }
-
   const { error: sendError } = await resend.emails.send({
     from: 'Mutua <hello@trymutua.com>',
     to: email,
     subject: 'Your language partner is here 🎉',
-    html: emailHtml(data.properties.action_link),
+    html: emailHtml(),
   });
 
   if (sendError) return NextResponse.json({ error: sendError.message }, { status: 500 });
