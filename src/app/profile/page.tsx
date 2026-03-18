@@ -6,7 +6,9 @@ import type { UserProfile } from '@/lib/types';
 import { LANGUAGES, GOALS, COMM_STYLES, FREQUENCY, type Language, type Goal, type CommStyle, type Frequency } from '@/lib/types';
 import { LANG_FLAGS } from '@/lib/constants';
 import { supabase, saveProfile } from '@/lib/supabase';
+import type { UserAvailability } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
+import AvailabilityPicker from '@/components/AvailabilityPicker';
 
 const LANG_COLORS: Record<string, string> = {
   Japanese: '#3b82f6', Korean: '#8b5cf6', Mandarin: '#ef4444',
@@ -29,6 +31,12 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploading, setUploading] = useState(false);
 
+  // Availability
+  const [availSlots,    setAvailSlots]    = useState<UserAvailability[]>([]);
+  const [availTimezone, setAvailTimezone] = useState('');
+  const [savingAvail,   setSavingAvail]   = useState(false);
+  const [editingAvail,  setEditingAvail]  = useState(false);
+
   // Preference fields
   const [native,     setNative]     = useState<Language>('English');
   const [learning,   setLearning]   = useState<Language>('Japanese');
@@ -50,6 +58,22 @@ export default function ProfilePage() {
       setCommStyle(p.comm_style);
       if (p.practice_frequency) setPracticeFrequency(p.practice_frequency);
     }
+
+    // Load existing availability (requires auth session)
+    async function loadAvailability() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      const avResp = await fetch('/api/get-availability', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch(() => null);
+      if (!avResp?.ok) return;
+      const av = await avResp.json();
+      if (av.slots?.length) {
+        setAvailSlots(av.slots);
+        setAvailTimezone(av.timezone ?? '');
+      }
+    }
+    loadAvailability();
   }, []);
 
   const handleAvatarClick = () => fileRef.current?.click();
@@ -244,6 +268,56 @@ export default function ProfilePage() {
               )}
 
             </div>
+            {/* ── Availability card ── */}
+            <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Weekly availability</p>
+                  {availSlots.length > 0 && !editingAvail && (
+                    <p className="text-xs text-stone-400 mt-0.5">{availSlots.length} slot{availSlots.length === 1 ? '' : 's'} saved</p>
+                  )}
+                </div>
+                {!editingAvail ? (
+                  <button onClick={() => setEditingAvail(true)} className="text-xs font-semibold text-[#2B8FFF] hover:underline">
+                    {availSlots.length > 0 ? 'Edit' : 'Set availability'}
+                  </button>
+                ) : (
+                  <button onClick={() => setEditingAvail(false)} className="text-xs text-stone-400 hover:text-neutral-900 transition-colors">Cancel</button>
+                )}
+              </div>
+
+              {!editingAvail && availSlots.length === 0 && (
+                <p className="text-sm text-stone-500">
+                  Set your recurring free times so we can find a session slot with your partner automatically.
+                </p>
+              )}
+
+              {editingAvail && (
+                <AvailabilityPicker
+                  initial={availSlots}
+                  timezone={availTimezone || undefined}
+                  onChange={(slots, tz) => { setAvailSlots(slots as UserAvailability[]); setAvailTimezone(tz); }}
+                  onSave={async (slots, tz) => {
+                    setSavingAvail(true);
+                    const { data: { session } } = await supabase.auth.getSession();
+                    await fetch('/api/set-availability', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                      },
+                      body: JSON.stringify({ slots, timezone: tz }),
+                    });
+                    setAvailSlots(slots as UserAvailability[]);
+                    setAvailTimezone(tz);
+                    setSavingAvail(false);
+                    setEditingAvail(false);
+                  }}
+                  saving={savingAvail}
+                />
+              )}
+            </div>
+
           </>
         ) : (
           <div className="bg-white border border-stone-200 rounded-2xl shadow-sm px-8 py-12 text-center space-y-3">
