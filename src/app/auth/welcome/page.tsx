@@ -86,7 +86,7 @@ export default function WelcomePage() {
               required
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Your first name"
+              placeholder="Name"
               autoFocus
               className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm text-neutral-900 placeholder:text-stone-300 focus:outline-none focus:border-[#2B8FFF] focus:ring-2 focus:ring-[#2B8FFF]/10 transition-all"
             />
