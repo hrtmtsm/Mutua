@@ -83,26 +83,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, matchesTriggered: 0 });
   }
 
-  // Update availability timestamps and transition to computing
+  // Update availability timestamps; only move to computing when BOTH sides have saved
   const isA = (m: any) => m.session_id_a === profile.session_id;
+  const matchesToSchedule: string[] = [];
+
   for (const m of matches) {
-    await db
+    const iAmA = isA(m);
+    const updatePayload = iAmA
+      ? { availability_a_set_at: now }
+      : { availability_b_set_at: now };
+
+    // Fetch current timestamps to check if other side already saved
+    const { data: current } = await db
       .from('matches')
-      .update(isA(m)
-        ? { availability_a_set_at: now, scheduling_state: 'computing' }
-        : { availability_b_set_at: now, scheduling_state: 'computing' }
-      )
-      .eq('id', m.id);
+      .select('availability_a_set_at, availability_b_set_at')
+      .eq('id', m.id)
+      .single();
+
+    const otherSideReady = iAmA
+      ? !!current?.availability_b_set_at
+      : !!current?.availability_a_set_at;
+
+    if (otherSideReady) {
+      Object.assign(updatePayload, { scheduling_state: 'computing' });
+      matchesToSchedule.push(m.id);
+    }
+
+    await db.from('matches').update(updatePayload).eq('id', m.id);
   }
 
-  // Trigger scheduler for each match (fire-and-forget)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  // Trigger scheduler only for matches where both sides have availability
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? vercelUrl ?? 'http://localhost:3000';
+
   Promise.allSettled(
-    matches.map(m =>
+    matchesToSchedule.map(matchId =>
       fetch(`${baseUrl}/api/schedule-match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId: m.id }),
+        body: JSON.stringify({ matchId }),
       }).catch(err => console.error('[set-availability] scheduler trigger failed', err))
     )
   );
