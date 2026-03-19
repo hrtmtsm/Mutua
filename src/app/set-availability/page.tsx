@@ -103,13 +103,17 @@ function SetAvailabilityInner() {
           </button>
 
           <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">
-            Scheduling with {partnerName}
+            {schedulingState === 'scheduled' ? `Rescheduling with ${partnerName}` : `Scheduling with ${partnerName}`}
           </p>
-          <h1 className="font-serif font-black text-2xl text-neutral-900">When are you usually free?</h1>
+          <h1 className="font-serif font-black text-2xl text-neutral-900">
+            {schedulingState === 'scheduled' ? 'Update your free times' : 'When are you usually free?'}
+          </h1>
           <p className="text-sm text-stone-500 mt-1.5">
-            {showPartner
-              ? `Your schedules don't overlap yet. Partner's free times are highlighted — add slots that line up to find a shared window.`
-              : `We'll match your schedule with ${partnerName}'s and automatically find the best time — you only set this once.`}
+            {schedulingState === 'scheduled'
+              ? `Your current session will be replaced. Your partner's free times are highlighted — add slots that overlap to find a new time.`
+              : showPartner
+                ? `Your schedules don't overlap yet. Partner's free times are highlighted — add slots that line up to find a shared window.`
+                : `We'll match your schedule with ${partnerName}'s and automatically find the best time — you only set this once.`}
           </p>
         </div>
 
@@ -139,7 +143,9 @@ function SetAvailabilityInner() {
           disabled={saving || slots.length === 0}
           className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none"
         >
-          {saving ? 'Matching schedules...' : 'Match our schedules →'}
+          {saving
+            ? (schedulingState === 'scheduled' ? 'Finding a new time...' : 'Matching schedules...')
+            : (schedulingState === 'scheduled' ? 'Find a new time →' : 'Match our schedules →')}
         </button>
       </div>
     </div>
