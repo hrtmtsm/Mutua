@@ -7,11 +7,10 @@ import { useState, useEffect } from 'react';
 // spec: day_of_week 0=Mon … 6=Sun
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// 8 AM – 10 PM, 30-min steps
+// Full 24 hours, 30-min steps
 const TIME_SLOTS: { label: string; minute: number }[] = [];
-for (let h = 8; h <= 22; h++) {
+for (let h = 0; h < 24; h++) {
   for (const m of [0, 30]) {
-    if (h === 22 && m === 30) break;
     const h12  = h === 0 ? 12 : h > 12 ? h - 12 : h;
     const ampm = h >= 12 ? 'PM' : 'AM';
     TIME_SLOTS.push({
