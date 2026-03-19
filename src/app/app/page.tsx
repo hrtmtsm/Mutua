@@ -168,13 +168,13 @@ function SchedulingCard({
       {/* ── State-driven footer ── */}
       <div className="px-6 pb-5 pt-4 border-t border-stone-100">
 
-        {/* Book exchange CTA */}
+        {/* Schedule exchange CTA */}
         {iNeedToSet && (
           <button
             onClick={onBookExchange}
             className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
           >
-            Book exchange →
+            Schedule your exchange →
           </button>
         )}
 
@@ -324,7 +324,10 @@ export default function SessionPage() {
     return () => clearInterval(interval);
   }, [partner?.schedulingState, sessionId, loadMatch]);
 
-  const handleBookExchange = () => router.push('/set-availability');
+  const handleBookExchange = () => {
+    if (partner) localStorage.setItem('mutua_scheduling_partner', partner.name);
+    router.push('/set-availability');
+  };
 
   const handleAvailabilitySaved = (mId: string) => {
     // Optimistically move to computing, then poll

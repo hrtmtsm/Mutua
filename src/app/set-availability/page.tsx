@@ -9,10 +9,16 @@ import TopNav from '@/components/Sidebar';
 
 export default function SetAvailabilityPage() {
   const router = useRouter();
-  const [slots,    setSlots]    = useState<AvailabilitySlot[]>([]);
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [saving,   setSaving]   = useState(false);
-  const [loading,  setLoading]  = useState(true);
+  const [slots,       setSlots]       = useState<AvailabilitySlot[]>([]);
+  const [timezone,    setTimezone]    = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [saving,      setSaving]      = useState(false);
+  const [loading,     setLoading]     = useState(true);
+  const [partnerName, setPartnerName] = useState('your partner');
+
+  useEffect(() => {
+    const name = localStorage.getItem('mutua_scheduling_partner');
+    if (name) setPartnerName(name);
+  }, []);
 
   // Load existing availability if any
   useEffect(() => {
@@ -65,9 +71,12 @@ export default function SetAvailabilityPage() {
         </button>
 
         <div className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">
+            Scheduling with {partnerName}
+          </p>
           <h1 className="font-serif font-black text-2xl text-neutral-900">When are you usually free?</h1>
           <p className="text-sm text-stone-500 mt-1.5">
-            Select your recurring weekly free times. We'll automatically find the best slot with your partner — you only need to do this once.
+            We'll match your schedule with {partnerName}'s and automatically find the best time — you only set this once.
           </p>
         </div>
 
