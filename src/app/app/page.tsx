@@ -191,17 +191,14 @@ function SchedulingCard({
       {/* ── State-driven footer ── */}
       <div className="px-6 pb-5 pt-4 border-t border-stone-100">
 
-        {/* Need to set availability */}
+        {/* Book exchange CTA */}
         {iNeedToSet && !showPicker && (
           <div className="space-y-3">
-            <p className="text-sm text-stone-500">
-              Set your recurring free times so we can find the best slot for your first session.
-            </p>
             <button
               onClick={() => setShowPicker(true)}
               className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
             >
-              Set your availability →
+              Book exchange →
             </button>
           </div>
         )}
@@ -210,9 +207,10 @@ function SchedulingCard({
         {iNeedToSet && showPicker && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-neutral-900">Your weekly free times</p>
+              <p className="text-sm font-semibold text-neutral-900">When are you usually free?</p>
               <button onClick={() => setShowPicker(false)} className="text-xs text-stone-400 hover:text-neutral-900">Cancel</button>
             </div>
+            <p className="text-xs text-stone-400">Select your recurring weekly free times. We'll use this to find the best slot automatically.</p>
             <AvailabilityPicker
               initial={slots}
               timezone={timezone}
@@ -241,19 +239,19 @@ function SchedulingCard({
         {s === 'no_overlap' && (
           <div className="space-y-3">
             <p className="text-sm text-stone-500">
-              No shared 30-minute window found yet. Try opening a few more slots.
+              No shared window found yet — try adding a few more free slots.
             </p>
             {!showPicker ? (
               <button
                 onClick={() => setShowPicker(true)}
                 className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
               >
-                Update availability →
+                Update my availability →
               </button>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-neutral-900">Update your free times</p>
+                  <p className="text-sm font-semibold text-neutral-900">When are you usually free?</p>
                   <button onClick={() => setShowPicker(false)} className="text-xs text-stone-400 hover:text-neutral-900">Cancel</button>
                 </div>
                 <AvailabilityPicker
