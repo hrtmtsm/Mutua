@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
-import { findCandidates, saveToWaitlist, checkWaitlistForMatch } from '@/lib/supabase';
+import { findCandidates, saveToWaitlist, checkWaitlistForMatch, supabase } from '@/lib/supabase';
 import { buildMatchResult } from '@/lib/matching';
 import AppShell from '@/components/AppShell';
 
@@ -60,6 +60,30 @@ export default function FindMatchPage() {
 
       const match = buildMatchResult(p, candidates as UserProfile[]);
       localStorage.setItem('mutua_match', JSON.stringify(match));
+
+      // Write match to DB if partner is a real user (not a demo fallback)
+      const partner = match.partner;
+      if (partner.session_id && !partner.session_id.startsWith('demo-')) {
+        const isA = p.session_id < partner.session_id; // deterministic ordering
+        await supabase.from('matches').upsert({
+          session_id_a:       isA ? p.session_id        : partner.session_id,
+          session_id_b:       isA ? partner.session_id  : p.session_id,
+          name_a:             isA ? (p.name ?? '')       : (partner.name ?? ''),
+          name_b:             isA ? (partner.name ?? '') : (p.name ?? ''),
+          email_a:            isA ? (p.email ?? '')      : (partner.email ?? ''),
+          email_b:            isA ? (partner.email ?? '') : (p.email ?? ''),
+          native_language_a:  isA ? p.native_language        : partner.native_language,
+          native_language_b:  isA ? partner.native_language  : p.native_language,
+          goal:               p.goal,
+          comm_style:         p.comm_style,
+          practice_frequency: p.practice_frequency,
+          score:              match.score,
+          reasons:            match.reasons,
+          scheduling_state:   'pending_both',
+          expires_at:         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }, { onConflict: 'session_id_a,session_id_b', ignoreDuplicates: true });
+      }
+
       router.push('/match-result');
     };
     run();
