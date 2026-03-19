@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
 import { LANG_FLAGS } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
-import AvailabilityPicker from '@/components/AvailabilityPicker';
-import type { AvailabilitySlot } from '@/components/AvailabilityPicker';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -83,26 +81,21 @@ function partnerFromMatch(m: Match, sessionId: string): PartnerCard {
 
 function SchedulingCard({
   partner,
-  myAvailability,
-  onAvailabilitySaved,
   onConfirm,
   onReschedule,
   onJoin,
+  onBookExchange,
 }: {
-  partner:             PartnerCard;
-  myAvailability:      AvailabilitySlot[];
-  onAvailabilitySaved: (matchId: string) => void;
-  onConfirm:           (matchId: string, scheduledAt: string) => void;
-  onReschedule:        () => void;
-  onJoin:              () => void;
+  partner:         PartnerCard;
+  onConfirm:       (matchId: string, scheduledAt: string) => void;
+  onReschedule:    () => void;
+  onJoin:          () => void;
+  onBookExchange:  () => void;
 }) {
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
 
-  const [showPicker,  setShowPicker]  = useState(false);
-  const [slots,       setSlots]       = useState<AvailabilitySlot[]>(myAvailability);
-  const [timezone,    setTimezone]    = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [saving,      setSaving]      = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
 
   // Determine my pending state
   const s = partner.schedulingState;
@@ -113,22 +106,6 @@ function SchedulingCard({
   const waitingOnPartner =
     (s === 'pending_a' && !partner.iAmA) ||
     (s === 'pending_b' && partner.iAmA);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    await fetch('/api/set-availability', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-      },
-      body: JSON.stringify({ slots, timezone }),
-    });
-    setSaving(false);
-    setShowPicker(false);
-    onAvailabilitySaved(partner.matchId);
-  };
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
@@ -192,33 +169,13 @@ function SchedulingCard({
       <div className="px-6 pb-5 pt-4 border-t border-stone-100">
 
         {/* Book exchange CTA */}
-        {iNeedToSet && !showPicker && (
-          <div className="space-y-3">
-            <button
-              onClick={() => setShowPicker(true)}
-              className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
-            >
-              Book exchange →
-            </button>
-          </div>
-        )}
-
-        {/* Inline availability picker */}
-        {iNeedToSet && showPicker && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-neutral-900">When are you usually free?</p>
-              <button onClick={() => setShowPicker(false)} className="text-xs text-stone-400 hover:text-neutral-900">Cancel</button>
-            </div>
-            <p className="text-xs text-stone-400">Select your recurring weekly free times. We'll use this to find the best slot automatically.</p>
-            <AvailabilityPicker
-              initial={slots}
-              timezone={timezone}
-              onChange={(s, tz) => { setSlots(s); setTimezone(tz); }}
-              onSave={handleSave}
-              saving={saving}
-            />
-          </div>
+        {iNeedToSet && (
+          <button
+            onClick={onBookExchange}
+            className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
+          >
+            Book exchange →
+          </button>
         )}
 
         {/* Waiting on partner */}
@@ -241,28 +198,12 @@ function SchedulingCard({
             <p className="text-sm text-stone-500">
               No shared window found yet — try adding a few more free slots.
             </p>
-            {!showPicker ? (
-              <button
-                onClick={() => setShowPicker(true)}
-                className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
-              >
-                Update my availability →
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-neutral-900">When are you usually free?</p>
-                  <button onClick={() => setShowPicker(false)} className="text-xs text-stone-400 hover:text-neutral-900">Cancel</button>
-                </div>
-                <AvailabilityPicker
-                  initial={slots}
-                  timezone={timezone}
-                  onChange={(s, tz) => { setSlots(s); setTimezone(tz); }}
-                  onSave={handleSave}
-                  saving={saving}
-                />
-              </div>
-            )}
+            <button
+              onClick={onBookExchange}
+              className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
+            >
+              Update my availability →
+            </button>
           </div>
         )}
 
@@ -298,12 +239,11 @@ function SchedulingCard({
 
 export default function SessionPage() {
   const router = useRouter();
-  const [partner,      setPartner]      = useState<PartnerCard | null>(null);
-  const [myAvail,      setMyAvail]      = useState<AvailabilitySlot[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [matchId,      setMatchId]      = useState<string | null>(null);
-  const [sessionId,    setSessionId]    = useState<string | null>(null);
-  const [confirmed,    setConfirmed]    = useState<{ name: string; time: string } | null>(null);
+  const [partner,   setPartner]   = useState<PartnerCard | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [matchId,   setMatchId]   = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{ name: string; time: string } | null>(null);
 
   const loadMatch = useCallback(async (sid: string) => {
     try {
@@ -368,18 +308,6 @@ export default function SessionPage() {
       const found = await loadMatch(sid);
       if (!found) loadFromLocalStorage();
       setLoading(false);
-
-      // Load my saved availability
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        const res = await fetch('/api/get-availability', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }).catch(() => null);
-        if (res?.ok) {
-          const av = await res.json();
-          if (av.slots?.length) setMyAvail(av.slots);
-        }
-      }
     }
     init();
   }, [router, loadMatch]);
@@ -395,6 +323,8 @@ export default function SessionPage() {
 
     return () => clearInterval(interval);
   }, [partner?.schedulingState, sessionId, loadMatch]);
+
+  const handleBookExchange = () => router.push('/set-availability');
 
   const handleAvailabilitySaved = (mId: string) => {
     // Optimistically move to computing, then poll
@@ -444,11 +374,10 @@ export default function SessionPage() {
         ) : partner ? (
           <SchedulingCard
             partner={partner}
-            myAvailability={myAvail}
-            onAvailabilitySaved={handleAvailabilitySaved}
             onConfirm={handleConfirm}
             onReschedule={handleReschedule}
             onJoin={handleJoin}
+            onBookExchange={handleBookExchange}
           />
         ) : (
           <div className="bg-stone-50 border border-stone-200 border-dashed rounded-2xl px-6 py-10 text-center">
