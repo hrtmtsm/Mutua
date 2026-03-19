@@ -147,8 +147,6 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         <div className={fullHeight ? '' : 'overflow-y-auto max-h-80 scrollbar-thin'}>
           {TIME_SLOTS.map(({ shortLabel, minute }, i) => {
             const isHour = minute % 60 === 0;
-            const prevMinute = i > 0 ? TIME_SLOTS[i - 1].minute : null;
-            const nextMinute = i < TIME_SLOTS.length - 1 ? TIME_SLOTS[i + 1].minute : null;
             return (
               <div
                 key={minute}
@@ -159,22 +157,12 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
                   const active   = isSelected(day, minute);
                   const partner  = isPartner(day, minute);
                   const overlap  = active && partner;
-                  const aboveOn  = prevMinute !== null && isSelected(day, prevMinute);
-                  const belowOn  = nextMinute !== null && isSelected(day, nextMinute);
-                  const roundTop    = active && !aboveOn;
-                  const roundBottom = active && !belowOn;
-                  const radius = [
-                    roundTop    ? '6px' : '0',
-                    roundTop    ? '6px' : '0',
-                    roundBottom ? '6px' : '0',
-                    roundBottom ? '6px' : '0',
-                  ].join(' ');
                   return (
                     <button
                       key={day}
                       onPointerDown={() => handlePointerDown(day, minute)}
                       onPointerEnter={() => handlePointerEnter(day, minute)}
-                      style={active ? { borderRadius: radius } : undefined}
+                      style={active ? { borderRadius: '6px' } : undefined}
                       className={`${day > 0 ? 'border-l border-stone-100' : ''} py-2.5 transition-colors touch-none flex items-center justify-center ${
                         overlap
                           ? 'bg-emerald-400/50 hover:bg-emerald-400/60'
