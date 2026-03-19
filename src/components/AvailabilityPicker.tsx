@@ -204,11 +204,9 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </div>
       )}
 
-      <p className="text-xs text-stone-400 mt-2 text-center">
-        {selected.size === 0
-          ? 'Tap or drag to select your free times'
-          : `${selected.size} slot${selected.size === 1 ? '' : 's'} selected`}
-      </p>
+      {selected.size === 0 && (
+        <p className="text-xs text-stone-400 mt-2 text-center">Tap or drag to select your free times</p>
+      )}
 
       {onSave && (
         <button

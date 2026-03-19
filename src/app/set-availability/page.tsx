@@ -158,11 +158,16 @@ function SetAvailabilityInner() {
         <button
           onClick={handleSave}
           disabled={saving || cancelling || slots.length === 0}
-          className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none"
+          className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
         >
-          {saving
-            ? (schedulingState === 'scheduled' ? 'Finding a new time...' : 'Matching schedules...')
-            : (schedulingState === 'scheduled' ? 'Find a new time →' : 'Match our schedules →')}
+          <span>
+            {saving
+              ? (schedulingState === 'scheduled' ? 'Finding a new time...' : 'Matching schedules...')
+              : (schedulingState === 'scheduled' ? 'Find a new time →' : 'Match our schedules →')}
+          </span>
+          {!saving && slots.length > 0 && (
+            <span className="text-white/70 font-normal text-xs">({slots.length} slots)</span>
+          )}
         </button>
 
         {schedulingState === 'scheduled' && matchId && (
