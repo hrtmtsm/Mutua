@@ -144,25 +144,10 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </p>
       )}
 
-      {/* Sticky wrapper — nav + day headers */}
+      {/* Sticky day header with overlaid arrow — no extra rows */}
       <div className="sticky top-0 z-10 bg-white">
-        {/* Single arrow — right side on page 0, left side on page 1 */}
-        <div className={`flex py-1.5 ${page === 0 ? 'justify-end' : 'justify-start'}`}>
-          {page === 0 && (
-            <button onClick={() => setPage(1)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
-              Fri, Sat, Sun →
-            </button>
-          )}
-          {page === 1 && (
-            <button onClick={() => setPage(0)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
-              ← Mon, Tue, Wed, Thu
-            </button>
-          )}
-        </div>
-
-        {/* Day header row */}
         <div
-          className="grid border border-b-0 border-stone-200 rounded-t-2xl bg-stone-50"
+          className="relative grid border border-b-0 border-stone-200 rounded-t-2xl bg-stone-50"
           style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}
         >
           {visibleDays.map((dayIdx, i) => (
@@ -170,6 +155,26 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
               {DAY_LABELS[dayIdx]}
             </div>
           ))}
+
+          {/* Arrow — absolutely positioned, floats over last/first column edge */}
+          {page === 0 && (
+            <button
+              onClick={() => setPage(1)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors text-base leading-none"
+              aria-label="Show Fri–Sun"
+            >
+              ›
+            </button>
+          )}
+          {page === 1 && (
+            <button
+              onClick={() => setPage(0)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors text-base leading-none"
+              aria-label="Show Mon–Thu"
+            >
+              ‹
+            </button>
+          )}
         </div>
       </div>
 
