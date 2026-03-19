@@ -118,10 +118,11 @@ export async function POST(request: Request) {
   }
 
   // Trigger scheduler only for matches where both sides have availability
+  // Must be awaited — Vercel kills the process as soon as response is sent
   const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? vercelUrl ?? 'http://localhost:3000';
 
-  Promise.allSettled(
+  await Promise.allSettled(
     matchesToSchedule.map(matchId =>
       fetch(`${baseUrl}/api/schedule-match`, {
         method: 'POST',
