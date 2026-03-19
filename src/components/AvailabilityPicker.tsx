@@ -132,11 +132,11 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         {/* Day header row */}
         <div
           className="grid bg-stone-50 border-b border-stone-200"
-          style={{ gridTemplateColumns: `64px repeat(7, 1fr)` }}
+          style={{ gridTemplateColumns: `72px repeat(7, 1fr)` }}
         >
           <div />
           {DAY_LABELS.map(d => (
-            <div key={d} className="py-2 text-center text-xs font-semibold text-stone-500 border-l border-stone-100">
+            <div key={d} className="py-2.5 text-center text-xs font-semibold text-stone-500 border-l border-stone-200">
               {d}
             </div>
           ))}
@@ -145,19 +145,20 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         {/* Time rows — scrollable */}
         <div className={fullHeight ? '' : 'overflow-y-auto max-h-80 scrollbar-thin'}>
           {TIME_SLOTS.map(({ label, minute }, i) => {
+            const isHour = minute % 60 === 0;
             const prevMinute = i > 0 ? TIME_SLOTS[i - 1].minute : null;
             const nextMinute = i < TIME_SLOTS.length - 1 ? TIME_SLOTS[i + 1].minute : null;
             return (
               <div
                 key={minute}
-                className={`grid border-stone-50 ${i < TIME_SLOTS.length - 1 ? 'border-b' : ''}`}
-                style={{ gridTemplateColumns: `64px repeat(7, 1fr)` }}
+                className={`grid ${isHour && i > 0 ? 'border-t border-stone-200' : i > 0 ? 'border-t border-stone-100' : ''}`}
+                style={{ gridTemplateColumns: `72px repeat(7, 1fr)` }}
               >
-                {/* Time label — only on the hour */}
-                <div className="flex items-center px-3">
-                  {minute % 60 === 0 && (
-                    <span className="text-[10px] text-stone-400 whitespace-nowrap">{label}</span>
-                  )}
+                {/* Time label — every row */}
+                <div className="flex items-center px-3 py-2">
+                  <span className={`text-[10px] whitespace-nowrap ${isHour ? 'text-stone-500 font-medium' : 'text-stone-300'}`}>
+                    {label}
+                  </span>
                 </div>
                 {DAY_LABELS.map((_, day) => {
                   const active   = isSelected(day, minute);
@@ -179,14 +180,14 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
                       onPointerDown={() => handlePointerDown(day, minute)}
                       onPointerEnter={() => handlePointerEnter(day, minute)}
                       style={active ? { borderRadius: radius } : undefined}
-                      className={`border-l border-stone-100 py-2.5 transition-colors touch-none ${
+                      className={`border-l border-stone-100 py-3 transition-colors touch-none ${
                         overlap
                           ? 'bg-emerald-400/50 hover:bg-emerald-400/60'
                           : active
                             ? 'bg-[#2B8FFF]/40 hover:bg-[#2B8FFF]/50'
                             : partner
-                              ? 'bg-amber-300/30 hover:bg-amber-300/50'
-                              : 'hover:bg-[#2B8FFF]/10'
+                              ? 'bg-amber-200/50 hover:bg-amber-200/70'
+                              : 'bg-stone-50 hover:bg-[#2B8FFF]/10'
                       }`}
                     />
                   );
