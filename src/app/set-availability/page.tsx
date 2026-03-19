@@ -15,9 +15,15 @@ export default function SetAvailabilityPage() {
   const [loading,     setLoading]     = useState(true);
   const [partnerName, setPartnerName] = useState('your partner');
 
+  // Read partner name synchronously on mount
   useEffect(() => {
-    const name = localStorage.getItem('mutua_scheduling_partner');
-    if (name) setPartnerName(name);
+    const direct = localStorage.getItem('mutua_scheduling_partner');
+    if (direct) { setPartnerName(direct); return; }
+    const raw = localStorage.getItem('mutua_current_partner');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.name) setPartnerName(parsed.name);
+    }
   }, []);
 
   // Load existing availability if any
@@ -91,6 +97,7 @@ export default function SetAvailabilityPage() {
             onChange={(s, tz) => { setSlots(s); setTimezone(tz); }}
             onSave={handleSave}
             saving={saving}
+            fullHeight
           />
         )}
 

@@ -32,11 +32,12 @@ interface Props {
   onChange:   (slots: AvailabilitySlot[], timezone: string) => void;
   onSave?:    (slots: AvailabilitySlot[], timezone: string) => Promise<void>;
   saving?:    boolean;
+  fullHeight?: boolean;  // if true, show all rows without scroll cap
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function AvailabilityPicker({ initial = [], timezone: tzProp, onChange, onSave, saving }: Props) {
+export default function AvailabilityPicker({ initial = [], timezone: tzProp, onChange, onSave, saving, fullHeight }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set(
     initial.map(s => `${s.day_of_week}-${s.start_minute}`)
   ));
@@ -136,7 +137,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </div>
 
         {/* Time rows — scrollable */}
-        <div className="overflow-y-auto max-h-80">
+        <div className={fullHeight ? '' : 'overflow-y-auto max-h-80'}>
           {TIME_SLOTS.map(({ label, minute }, i) => (
             <div
               key={minute}
