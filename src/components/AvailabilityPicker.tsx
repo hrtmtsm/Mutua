@@ -165,7 +165,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
                       onPointerDown={() => handlePointerDown(day, minute)}
                       onPointerEnter={() => handlePointerEnter(day, minute)}
                       style={active ? { borderRadius: '6px' } : undefined}
-                      className={`${day > 0 ? 'border-l border-stone-100' : ''} py-2.5 transition-colors touch-none flex items-center justify-center ${
+                      className={`${day > 0 ? 'border-l border-stone-100' : ''} py-2.5 transition-colors flex items-center justify-center ${
                         overlap
                           ? 'bg-emerald-400/50 hover:bg-emerald-400/60'
                           : active
