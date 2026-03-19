@@ -373,8 +373,8 @@ export default function SessionPage() {
   const handleReschedule = () => {
     if (partner) localStorage.setItem('mutua_scheduling_partner', partner.name);
     const params = new URLSearchParams();
-    if (partner?.matchId) params.set('matchId', partner.matchId);
-    params.set('schedulingState', 'no_overlap'); // show partner tint for context
+    if (partner?.matchId)         params.set('matchId', partner.matchId);
+    if (partner?.schedulingState) params.set('schedulingState', partner.schedulingState);
     router.push(`/set-availability?${params.toString()}`);
   };
 

@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     .from('matches')
     .select('id, scheduling_state, session_id_a, session_id_b')
     .or(`session_id_a.eq.${profile.session_id},session_id_b.eq.${profile.session_id}`)
-    .in('scheduling_state', ['pending_both', 'pending_a', 'pending_b', 'no_overlap', 'computing']);
+    .in('scheduling_state', ['pending_both', 'pending_a', 'pending_b', 'no_overlap', 'computing', 'scheduled']);
 
   if (!matches?.length) {
     return NextResponse.json({ ok: true, matchesTriggered: 0 });
@@ -105,8 +105,11 @@ export async function POST(request: Request) {
       : !!current?.availability_a_set_at;
 
     if (otherSideReady) {
-      // Both sides ready — trigger scheduler
-      Object.assign(updatePayload, { scheduling_state: 'computing' });
+      // Both sides ready — clear any old confirmed session then re-run scheduler
+      if (m.scheduling_state === 'scheduled') {
+        await db.from('confirmed_sessions').delete().eq('match_id', m.id);
+      }
+      Object.assign(updatePayload, { scheduling_state: 'computing', scheduled_at: null });
       matchesToSchedule.push(m.id);
     } else {
       // Only this side ready — move to pending_a or pending_b so partner sees the CTA

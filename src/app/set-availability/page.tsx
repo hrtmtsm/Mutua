@@ -12,7 +12,7 @@ function SetAvailabilityInner() {
   const searchParams   = useSearchParams();
   const matchId        = searchParams.get('matchId');
   const schedulingState = searchParams.get('schedulingState');
-  const showPartner    = schedulingState === 'no_overlap';
+  const showPartner    = schedulingState === 'no_overlap' || schedulingState === 'scheduled';
 
   const [slots,        setSlots]        = useState<AvailabilitySlot[]>([]);
   const [timezone,     setTimezone]     = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
