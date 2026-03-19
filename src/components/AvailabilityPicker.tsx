@@ -36,11 +36,12 @@ interface Props {
   fullHeight?:          boolean;
   partnerSlots?:        AvailabilitySlot[];
   hideTimezoneNotice?:  boolean; // let parent render timezone UI outside the scroll area
+  hideLegend?:          boolean; // let parent render the legend outside the scroll area
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function AvailabilityPicker({ initial = [], timezone: tzProp, onChange, onSave, saving, fullHeight, partnerSlots, hideTimezoneNotice }: Props) {
+export default function AvailabilityPicker({ initial = [], timezone: tzProp, onChange, onSave, saving, fullHeight, partnerSlots, hideTimezoneNotice, hideLegend }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set(
     initial.map(s => `${s.day_of_week}-${s.start_minute}`)
   ));
@@ -188,7 +189,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </div>
       </div>
 
-      {partnerSlots && partnerSlots.length > 0 && (
+      {!hideLegend && partnerSlots && partnerSlots.length > 0 && (
         <div className="flex items-center justify-center gap-4 mt-3 text-xs text-stone-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-[#2B8FFF]/40 inline-block" />
