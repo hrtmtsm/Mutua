@@ -108,7 +108,7 @@ function SchedulingCard({
     (s === 'pending_b' && partner.iAmA);
 
   return (
-    <div className="card-grain border border-stone-200/80 rounded-2xl overflow-hidden">
+    <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
 
       {/* Header */}
       <div className="px-6 pt-5 pb-4 flex items-center gap-4">
@@ -141,11 +141,11 @@ function SchedulingCard({
 
       {/* Language blocks */}
       <div className="px-6 pb-4 grid grid-cols-2 gap-3">
-        <div className="bg-white/50 border border-stone-200/60 rounded-xl px-4 py-3">
+        <div className="bg-stone-50 border border-stone-100 rounded-xl px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Native</p>
           <p className="font-bold text-neutral-900 text-base">{nativeFlag} {partner.nativeLang}</p>
         </div>
-        <div className="bg-white/50 border border-stone-200/60 rounded-xl px-4 py-3">
+        <div className="bg-sky-50 border border-sky-100 rounded-xl px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Practicing</p>
           <p className="font-bold text-neutral-900 text-base">{learningFlag} {partner.learningLang}</p>
         </div>
@@ -166,7 +166,7 @@ function SchedulingCard({
       )}
 
       {/* ── State-driven footer ── */}
-      <div className="px-6 pb-5 pt-4 border-t border-stone-200/60">
+      <div className="px-6 pb-5 pt-4 border-t border-stone-100">
 
         {/* Schedule exchange CTA */}
         {iNeedToSet && (
