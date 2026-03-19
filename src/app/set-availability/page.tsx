@@ -17,6 +17,7 @@ function SetAvailabilityInner() {
   const [slots,        setSlots]        = useState<AvailabilitySlot[]>([]);
   const [timezone,     setTimezone]     = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [saving,       setSaving]       = useState(false);
+  const [cancelling,   setCancelling]   = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [partnerName,  setPartnerName]  = useState('your partner');
   const [partnerSlots, setPartnerSlots] = useState<AvailabilitySlot[]>([]);
@@ -68,6 +69,22 @@ function SetAvailabilityInner() {
     }
     loadPartner();
   }, [matchId, showPartner]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCancel = async () => {
+    if (!matchId) return;
+    setCancelling(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    await fetch('/api/cancel-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ matchId }),
+    });
+    setCancelling(false);
+    router.back();
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -140,13 +157,23 @@ function SetAvailabilityInner() {
       <div className="shrink-0 px-6 pt-3 pb-6 bg-white border-t border-stone-100 max-w-2xl mx-auto w-full">
         <button
           onClick={handleSave}
-          disabled={saving || slots.length === 0}
+          disabled={saving || cancelling || slots.length === 0}
           className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none"
         >
           {saving
             ? (schedulingState === 'scheduled' ? 'Finding a new time...' : 'Matching schedules...')
             : (schedulingState === 'scheduled' ? 'Find a new time →' : 'Match our schedules →')}
         </button>
+
+        {schedulingState === 'scheduled' && matchId && (
+          <button
+            onClick={handleCancel}
+            disabled={saving || cancelling}
+            className="w-full mt-3 text-sm text-stone-400 hover:text-rose-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {cancelling ? 'Cancelling...' : "Actually, I can't make it :("}
+          </button>
+        )}
       </div>
     </div>
   );
