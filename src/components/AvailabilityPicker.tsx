@@ -75,8 +75,9 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
   const isSelected = (day: number, minute: number) =>
     selected.has(`${day}-${minute}`);
 
-  // Day navigation — show 4 days at a time
-  const [dayStart, setDayStart] = useState(0); // 0=Mon–Thu … 3=Thu–Sun
+  // Day navigation — two fixed pages: Mon–Thu (page 0) and Fri–Sun (page 1)
+  const [page, setPage] = useState(0);
+  const visibleDays = page === 0 ? [0, 1, 2, 3] : [4, 5, 6];
 
   // Drag-to-select (mouse only — touch uses onClick so scroll works)
   const [dragging, setDragging] = useState<'add' | 'remove' | null>(null);
@@ -143,35 +144,28 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </p>
       )}
 
-      {/* Sticky wrapper — nav row + day headers together */}
+      {/* Sticky wrapper — nav + day headers */}
       <div className="sticky top-0 z-10 bg-white">
-        {/* Prev / Next navigation */}
-        <div className="flex items-center justify-between py-1.5">
-          <button
-            onClick={() => setDayStart(d => Math.max(0, d - 1))}
-            disabled={dayStart === 0}
-            className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 disabled:opacity-25 transition-colors"
-          >
-            ← Prev
-          </button>
-          <span className="text-xs text-stone-400">
-            {DAY_LABELS[dayStart]} – {DAY_LABELS[dayStart + 3]}
-          </span>
-          <button
-            onClick={() => setDayStart(d => Math.min(3, d + 1))}
-            disabled={dayStart === 3}
-            className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 disabled:opacity-25 transition-colors"
-          >
-            Next →
-          </button>
+        {/* Single arrow — right side on page 0, left side on page 1 */}
+        <div className={`flex py-1.5 ${page === 0 ? 'justify-end' : 'justify-start'}`}>
+          {page === 0 && (
+            <button onClick={() => setPage(1)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
+              Fri, Sat, Sun →
+            </button>
+          )}
+          {page === 1 && (
+            <button onClick={() => setPage(0)} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
+              ← Mon, Tue, Wed, Thu
+            </button>
+          )}
         </div>
 
-        {/* Day header row — full width, perfectly aligned with time rows */}
+        {/* Day header row */}
         <div
           className="grid border border-b-0 border-stone-200 rounded-t-2xl bg-stone-50"
-          style={{ gridTemplateColumns: `repeat(4, 1fr)` }}
+          style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}
         >
-          {Array.from({ length: 4 }, (_, i) => dayStart + i).map((dayIdx, i) => (
+          {visibleDays.map((dayIdx, i) => (
             <div key={dayIdx} className={`py-2.5 text-center text-xs font-semibold text-stone-500 ${i > 0 ? 'border-l border-stone-200' : ''}`}>
               {DAY_LABELS[dayIdx]}
             </div>
@@ -179,16 +173,15 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </div>
       </div>
 
-      {/* Time rows — rounded-b container, aligned with header above */}
+      {/* Time rows */}
       <div className={`border-l border-r border-b border-stone-200 rounded-b-2xl overflow-hidden ${fullHeight ? '' : 'overflow-y-auto max-h-80 scrollbar-thin'}`}>
         {TIME_SLOTS.map(({ shortLabel, minute }, i) => {
           const isHour = minute % 60 === 0;
-          const visibleDays = Array.from({ length: 4 }, (_, j) => dayStart + j);
           return (
             <div
               key={minute}
               className={`grid ${isHour && i > 0 ? 'border-t border-stone-200' : i > 0 ? 'border-t border-stone-100' : ''}`}
-              style={{ gridTemplateColumns: `repeat(4, 1fr)` }}
+              style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}
             >
               {visibleDays.map((day, colIdx) => {
                 const active  = isSelected(day, minute);
@@ -201,7 +194,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
                     onPointerEnter={e => handlePointerEnter(e, day, minute)}
                     onClick={() => handleClick(day, minute)}
                     style={active ? { borderRadius: '6px' } : undefined}
-                    className={`${colIdx > 0 ? 'border-l border-stone-100' : ''} py-2.5 transition-colors flex items-center justify-center ${
+                    className={`${colIdx > 0 ? 'border-l border-stone-100' : ''} py-3 transition-colors flex items-center justify-center ${
                       overlap  ? 'bg-emerald-400/50 hover:bg-emerald-400/60'
                       : active  ? 'bg-[#2B8FFF]/40 hover:bg-[#2B8FFF]/50'
                       : partner ? 'bg-amber-200/50 hover:bg-amber-200/70'
