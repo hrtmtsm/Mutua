@@ -143,36 +143,43 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </p>
       )}
 
-      {/* Day header — sticky, outside overflow-hidden so position:sticky works */}
-      <div className="sticky top-0 z-10 bg-white pb-px">
-        <div className="flex items-center border border-stone-200 rounded-t-2xl bg-stone-50 overflow-hidden">
+      {/* Sticky wrapper — nav row + day headers together */}
+      <div className="sticky top-0 z-10 bg-white">
+        {/* Prev / Next navigation */}
+        <div className="flex items-center justify-between py-1.5">
           <button
             onClick={() => setDayStart(d => Math.max(0, d - 1))}
             disabled={dayStart === 0}
-            className="px-2.5 py-3 text-stone-400 hover:text-stone-700 disabled:opacity-20 transition-colors shrink-0"
-            aria-label="Previous days"
+            className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 disabled:opacity-25 transition-colors"
           >
-            ‹
+            ← Prev
           </button>
-          <div className="grid flex-1" style={{ gridTemplateColumns: `repeat(4, 1fr)` }}>
-            {Array.from({ length: 4 }, (_, i) => dayStart + i).map((dayIdx, i) => (
-              <div key={dayIdx} className={`py-2.5 text-center text-xs font-semibold text-stone-500 ${i > 0 ? 'border-l border-stone-200' : ''}`}>
-                {DAY_LABELS[dayIdx]}
-              </div>
-            ))}
-          </div>
+          <span className="text-xs text-stone-400">
+            {DAY_LABELS[dayStart]} – {DAY_LABELS[dayStart + 3]}
+          </span>
           <button
             onClick={() => setDayStart(d => Math.min(3, d + 1))}
             disabled={dayStart === 3}
-            className="px-2.5 py-3 text-stone-400 hover:text-stone-700 disabled:opacity-20 transition-colors shrink-0"
-            aria-label="Next days"
+            className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 disabled:opacity-25 transition-colors"
           >
-            ›
+            Next →
           </button>
+        </div>
+
+        {/* Day header row — full width, perfectly aligned with time rows */}
+        <div
+          className="grid border border-b-0 border-stone-200 rounded-t-2xl bg-stone-50"
+          style={{ gridTemplateColumns: `repeat(4, 1fr)` }}
+        >
+          {Array.from({ length: 4 }, (_, i) => dayStart + i).map((dayIdx, i) => (
+            <div key={dayIdx} className={`py-2.5 text-center text-xs font-semibold text-stone-500 ${i > 0 ? 'border-l border-stone-200' : ''}`}>
+              {DAY_LABELS[dayIdx]}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Time rows — inside separate rounded-b container (overflow-hidden here is fine, no sticky inside) */}
+      {/* Time rows — rounded-b container, aligned with header above */}
       <div className={`border-l border-r border-b border-stone-200 rounded-b-2xl overflow-hidden ${fullHeight ? '' : 'overflow-y-auto max-h-80 scrollbar-thin'}`}>
         {TIME_SLOTS.map(({ shortLabel, minute }, i) => {
           const isHour = minute % 60 === 0;
