@@ -140,12 +140,13 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
         </p>
       )}
 
-      {/* Grid */}
-      <div className="border border-stone-200 rounded-2xl overflow-hidden">
-        {/* Day header row */}
+      {/* Grid — outer wrapper allows horizontal scroll on mobile */}
+      <div className="border border-stone-200 rounded-2xl overflow-hidden overflow-x-auto scrollbar-thin">
+        <div style={{ minWidth: '420px' }}>
+        {/* Day header row — sticky so it never scrolls away */}
         <div
-          className="grid bg-stone-50 border-b border-stone-200"
-          style={{ gridTemplateColumns: `repeat(7, 1fr)` }}
+          className="grid bg-stone-50 border-b border-stone-200 sticky top-0 z-10"
+          style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}
         >
           {DAY_LABELS.map((d, i) => (
             <div key={d} className={`py-2.5 text-center text-xs font-semibold text-stone-500 ${i > 0 ? 'border-l border-stone-200' : ''}`}>
@@ -154,7 +155,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
           ))}
         </div>
 
-        {/* Time rows — scrollable */}
+        {/* Time rows */}
         <div className={fullHeight ? '' : 'overflow-y-auto max-h-80 scrollbar-thin'}>
           {TIME_SLOTS.map(({ shortLabel, minute }, i) => {
             const isHour = minute % 60 === 0;
@@ -162,7 +163,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
               <div
                 key={minute}
                 className={`grid ${isHour && i > 0 ? 'border-t border-stone-200' : i > 0 ? 'border-t border-stone-100' : ''}`}
-                style={{ gridTemplateColumns: `repeat(7, 1fr)` }}
+                style={{ gridTemplateColumns: `repeat(7, minmax(0, 1fr))` }}
               >
                 {DAY_LABELS.map((_, day) => {
                   const active   = isSelected(day, minute);
@@ -196,6 +197,7 @@ export default function AvailabilityPicker({ initial = [], timezone: tzProp, onC
               </div>
             );
           })}
+        </div>
         </div>
       </div>
 
