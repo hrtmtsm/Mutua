@@ -371,8 +371,11 @@ export default function SessionPage() {
   };
 
   const handleReschedule = () => {
-    if (matchId) localStorage.setItem('mutua_match_id', matchId);
-    router.push('/session-schedule');
+    if (partner) localStorage.setItem('mutua_scheduling_partner', partner.name);
+    const params = new URLSearchParams();
+    if (partner?.matchId) params.set('matchId', partner.matchId);
+    params.set('schedulingState', 'no_overlap'); // show partner tint for context
+    router.push(`/set-availability?${params.toString()}`);
   };
 
   const handleJoin = () => router.push('/pre-session');
