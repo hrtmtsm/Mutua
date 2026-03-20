@@ -90,15 +90,15 @@ function SetAvailabilityInner() {
   const handleSave = async () => {
     setSaving(true);
     const { data: { session } } = await supabase.auth.getSession();
-    await fetch('/api/set-availability', {
+    // Fire-and-forget — server handles matching in the background
+    fetch('/api/set-availability', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       },
       body: JSON.stringify({ slots, timezone }),
-    });
-    setSaving(false);
+    }).catch(() => null);
     router.back();
   };
 
@@ -205,7 +205,7 @@ function SetAvailabilityInner() {
           className="w-full py-3.5 btn-primary text-white font-bold text-sm rounded-xl disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
         >
           {saving ? (
-            <span>{schedulingState === 'scheduled' ? 'Finding a new time...' : 'Matching schedules...'}</span>
+            <span>Saving...</span>
           ) : (
             <span>
               {schedulingState === 'scheduled' ? 'Find a new time' : 'Match our schedules'}
