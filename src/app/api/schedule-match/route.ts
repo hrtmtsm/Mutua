@@ -61,9 +61,15 @@ export async function POST(request: Request) {
           scheduledAt: result.slot?.start.toISOString() ?? null,
         });
       } catch {
+        // Retry failed — resolve out of computing so match never gets stuck
+        const db = adminClient();
+        await db.from('matches').update({ scheduling_state: 'no_overlap' }).eq('id', matchId);
         return NextResponse.json({ error: 'slot_conflict_retry_failed' }, { status: 409 });
       }
     }
+    // Always resolve out of 'computing' so the match never gets stuck
+    const db = adminClient();
+    await db.from('matches').update({ scheduling_state: 'no_overlap' }).eq('id', matchId);
     console.error('[schedule-match]', err);
     return NextResponse.json({ error: err.message ?? 'internal_error' }, { status: 500 });
   }

@@ -128,13 +128,12 @@ function SchedulingCard({
         )}
         {s === 'no_overlap' && (
           <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-600 rounded-full shrink-0">
-            No overlap yet
+            No slots matched
           </span>
         )}
         {s === 'computing' && (
-          <span className="px-2.5 py-1 bg-sky-50 border border-sky-200 text-xs font-semibold text-[#2B8FFF] rounded-full shrink-0 flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 border-2 border-[#2B8FFF] border-t-transparent rounded-full animate-spin" />
-            Finding slot
+          <span className="px-2.5 py-1 bg-sky-50 border border-sky-200 text-xs font-semibold text-[#2B8FFF] rounded-full shrink-0">
+            Finding a match
           </span>
         )}
       </div>
@@ -188,7 +187,7 @@ function SchedulingCard({
         {/* Computing */}
         {s === 'computing' && (
           <p className="text-sm text-stone-500">
-            Finding the best time for both of you...
+            Looking for a time that works for both of you.
           </p>
         )}
 

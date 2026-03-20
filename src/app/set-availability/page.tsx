@@ -84,7 +84,7 @@ function SetAvailabilityInner() {
       body: JSON.stringify({ matchId }),
     });
     setCancelling(false);
-    router.back();
+    router.push('/app');
   };
 
   const handleSave = async () => {
@@ -99,7 +99,7 @@ function SetAvailabilityInner() {
       },
       body: JSON.stringify({ slots, timezone }),
     }).catch(() => null);
-    router.back();
+    router.push('/app');
   };
 
   return (
