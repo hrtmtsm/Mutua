@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MatchResult } from '@/lib/types';
-import { LANG_FLAGS } from '@/lib/constants';
-import { Check, Mic, MicOff, MessageSquare, Video, VideoOff, PhoneOff } from 'lucide-react';
+import { LANG_FLAGS, LANG_AVATAR_COLOR } from '@/lib/constants';
+import { Check, Mic, MicOff, MessageSquare, Video, VideoOff, PhoneOff, Wifi, WifiOff } from 'lucide-react';
+import { useWebRTC } from '@/hooks/useWebRTC';
 import {
   type Prompt,
   type Pools,
@@ -30,7 +31,7 @@ function formatTime(s: number) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-const CHECKPOINT = 15 * 60;
+const CHECKPOINT = 10 * 60;
 
 // ── Checklist items ───────────────────────────────────────────────────────────
 
@@ -99,62 +100,80 @@ const CHECKLIST_CELEBRATIONS: Prompt[] = [
 // ── PartnerTile (full-screen) ─────────────────────────────────────────────────
 
 function PartnerTile({
-  initials, isSpeaking, avatarUrl,
+  initials, isSpeaking, avatarUrl, isMuted, videoRef, cameraOn,
 }: {
-  initials: string;
+  initials:  string;
   isSpeaking: boolean;
   avatarUrl?: string;
+  isMuted?:  boolean;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+  cameraOn?: boolean;
 }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-[#2B8FFF]">
 
-      {/* ── Background: blurred, saturated, lowered-opacity profile ── */}
-      {avatarUrl ? (
-        /* Real profile photo — scale to fill, blur, saturate */
-        <img
-          src={avatarUrl}
-          alt=""
-          aria-hidden
+      {/* ── Partner live video ── */}
+      {cameraOn && (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ filter: 'blur(28px) saturate(1.5) brightness(0.8)', transform: 'scale(1.1)' }}
         />
-      ) : (
-        /*
-         * No photo: render the avatar circle itself at 100vmax so it
-         * covers every corner of the container, then blur + saturate it.
-         * The white initials create a subtle lighter centre so it doesn't
-         * read as a flat colour fill.
-         */
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2B8FFF] flex items-center justify-center"
-          style={{
-            width: '100vmax',
-            height: '100vmax',
-            filter: 'blur(32px) saturate(1.5) brightness(0.82) opacity(0.9)',
-          }}
-        >
-          <span
-            className="font-black text-white select-none pointer-events-none"
-            style={{ fontSize: '28vmin', lineHeight: 1 }}
-          >
-            {initials}
-          </span>
-        </div>
       )}
 
-      {/* Speaking halo */}
-      {isSpeaking && (
-        <div className="absolute w-44 h-44 rounded-full bg-white/20 animate-speak-pulse" />
+      {/* ── Background + avatar (shown when camera off) ── */}
+      {!cameraOn && (
+        <>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ filter: 'blur(28px) saturate(1.5) brightness(0.8)', transform: 'scale(1.1)' }}
+            />
+          ) : (
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2B8FFF] flex items-center justify-center"
+              style={{
+                width: '100vmax',
+                height: '100vmax',
+                filter: 'blur(32px) saturate(1.5) brightness(0.82) opacity(0.9)',
+              }}
+            >
+              <span
+                className="font-black text-white select-none pointer-events-none"
+                style={{ fontSize: '28vmin', lineHeight: 1 }}
+              >
+                {initials}
+              </span>
+            </div>
+          )}
+
+          {/* Speaking halo */}
+          {isSpeaking && (
+            <div className="absolute w-44 h-44 rounded-full bg-white/20 animate-speak-pulse" />
+          )}
+          {/* Foreground avatar */}
+          <div className={`
+            relative w-28 h-28 rounded-full
+            bg-white/20 backdrop-blur-md ring-2 ring-white/40
+            flex items-center justify-center font-black text-white text-3xl select-none
+            transition-transform duration-200 ${isSpeaking ? 'scale-110' : ''}
+          `}>
+            {initials}
+          </div>
+        </>
       )}
-      {/* Foreground avatar — frosted so it lifts off the blurred background */}
-      <div className={`
-        relative w-28 h-28 rounded-full
-        bg-white/20 backdrop-blur-md ring-2 ring-white/40
-        flex items-center justify-center font-black text-white text-3xl select-none
-        transition-transform duration-200 ${isSpeaking ? 'scale-110' : ''}
-      `}>
-        {initials}
-      </div>
+
+      {/* Mute badge */}
+      {isMuted && (
+        <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-2.5 py-1">
+          <MicOff className="w-3.5 h-3.5 text-white" />
+          <span className="text-[11px] font-semibold text-white">Muted</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -162,7 +181,7 @@ function PartnerTile({
 // ── SelfPIP ───────────────────────────────────────────────────────────────────
 
 function SelfPIP({
-  cameraOn, videoRef, isSpeaking, haloRef, positionClass, avatarUrl, initials,
+  cameraOn, videoRef, isSpeaking, haloRef, positionClass, avatarUrl, initials, avatarBg,
 }: {
   cameraOn:  boolean;
   videoRef:  React.RefObject<HTMLVideoElement>;
@@ -171,16 +190,25 @@ function SelfPIP({
   positionClass?: string;
   avatarUrl?: string | null;
   initials?: string;
+  avatarBg?: string;
 }) {
+  const bg = avatarBg ?? '#2B8FFF';
   return (
     <div
-      className={`${positionClass ?? 'absolute bottom-4 right-3 z-10'} w-[140px] rounded-2xl overflow-hidden`}
+      className={`${positionClass ?? 'absolute bottom-4 right-3 z-10'} w-[180px] rounded-2xl overflow-hidden`}
       style={{ aspectRatio: '3/4' }}
     >
-      {cameraOn ? (
-        <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-      ) : (
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-[#2B8FFF]">
+      {/* Always mounted so srcObject assignment persists across camera toggles */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className={`absolute inset-0 w-full h-full object-cover ${cameraOn ? '' : 'hidden'}`}
+      />
+
+      {!cameraOn && (
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: bg }}>
           {/* Blurred profile background */}
           {avatarUrl ? (
             <img
@@ -192,8 +220,8 @@ function SelfPIP({
             />
           ) : (
             <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2B8FFF] flex items-center justify-center"
-              style={{ width: '200%', aspectRatio: '1', filter: 'blur(22px) saturate(1.5) brightness(0.82)' }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center"
+              style={{ width: '200%', aspectRatio: '1', backgroundColor: bg, filter: 'blur(22px) saturate(1.5) brightness(0.82)' }}
             />
           )}
           {/* Speaking halo */}
@@ -202,7 +230,7 @@ function SelfPIP({
             className="absolute w-16 h-16 rounded-full bg-white/30"
             style={{ opacity: 0, transform: 'scale(1)', transformOrigin: 'center', willChange: 'transform, opacity' }}
           />
-          {/* Frosted avatar */}
+          {/* Avatar circle — photo if available, else initials */}
           <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/40 bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-white text-base select-none">
             {avatarUrl ? (
               <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -243,19 +271,22 @@ export default function SessionPage() {
   const [turnSwitched,         setTurnSwitched]         = useState(false);
   const [difficulty,           setDifficulty]           = useState(1);
 
+  const [myId]            = useState(() => localStorage.getItem('mutua_session_id') ?? '');
+  const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('mutua_seen_walkthrough'));
   const [myAvatarUrl,     setMyAvatarUrl]     = useState<string | null>(null);
   const [myInitials,      setMyInitials]      = useState('');
+  const [myNativeLang,    setMyNativeLang]    = useState('');
   const [youSpeaking,     setYouSpeaking]     = useState(false);
+  const [partnerSpeaking, setPartnerSpeaking] = useState(false);
   const [isOnline,        setIsOnline]        = useState(true);
-  const [micBlocked,      setMicBlocked]      = useState(false);
   const [showEndConfirm,  setShowEndConfirm]  = useState(false);
-  const partnerSpeaking = false;
 
   const videoRef           = useRef<HTMLVideoElement>(null);
-  const streamRef          = useRef<MediaStream | null>(null);
+  const partnerVideoRef    = useRef<HTMLVideoElement>(null);
   const audioCtxRef        = useRef<AudioContext | null>(null);
-  const audioStreamRef     = useRef<MediaStream | null>(null);
+  const partnerAudioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef       = useRef<number>(0);
+  const partnerAnimRef     = useRef<number>(0);
   const selfHaloRef        = useRef<HTMLDivElement>(null);
   const prevPhaseRef       = useRef<Phase>('ice');
   const messagesEndRef     = useRef<HTMLDivElement>(null);
@@ -268,6 +299,7 @@ export default function SessionPage() {
     if (rawProfile) {
       const p = JSON.parse(rawProfile);
       if (p.avatar_url) setMyAvatarUrl(p.avatar_url);
+      if (p.native_language) setMyNativeLang(p.native_language);
       const name: string = p.name ?? '';
       const parts = name.trim().split(' ');
       setMyInitials(parts.length >= 2
@@ -293,12 +325,11 @@ export default function SessionPage() {
   }, [router]);
 
   useEffect(() => {
+    const start = Date.now();
     const t = setInterval(() => {
-      setSeconds(s => {
-        const next = s + 1;
-        if (next === CHECKPOINT) setCheckpoint(true);
-        return next;
-      });
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      setSeconds(elapsed);
+      if (elapsed >= CHECKPOINT) setCheckpoint(true);
     }, 1000);
     return () => clearInterval(t);
   }, []);
@@ -313,92 +344,105 @@ export default function SessionPage() {
     }
   }, [phase]);
 
+  // ── WebRTC ─────────────────────────────────────────────────────────────────
+  const { rtcState, localStream, partnerStream, partnerMuted, partnerCameraOn } = useWebRTC({
+    myId,
+    partnerId: match?.partner.session_id ?? '',
+    muted,
+    cameraOn,
+  });
+
+  // Wire local stream → SelfPIP video element
   useEffect(() => {
-    if (!cameraOn) {
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
-      return;
+    if (videoRef.current && localStream) {
+      videoRef.current.srcObject = localStream;
     }
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then(stream => {
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => setCameraOn(false));
-  }, [cameraOn]);
+  }, [localStream]);
 
+  // Wire partner stream → PartnerTile video element
   useEffect(() => {
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()); };
-  }, []);
+    if (partnerVideoRef.current && partnerStream) {
+      partnerVideoRef.current.srcObject = partnerStream;
+    }
+  }, [partnerStream]);
 
-  // ── Mic volume detection → youSpeaking ────────────────────────────────────
+  // ── Self speaking detection (from local stream audio track) ───────────────
   useEffect(() => {
-    if (muted) {
+    const audioTrack = localStream?.getAudioTracks()[0];
+    if (!audioTrack || muted) {
       setYouSpeaking(false);
       if (selfHaloRef.current) { selfHaloRef.current.style.opacity = '0'; selfHaloRef.current.style.transform = 'scale(1)'; }
       cancelAnimationFrame(animFrameRef.current);
-      audioStreamRef.current?.getTracks().forEach(t => t.stop());
       audioCtxRef.current?.close();
-      audioStreamRef.current = null;
-      audioCtxRef.current    = null;
+      audioCtxRef.current = null;
       return;
     }
 
-    let cancelled = false;
+    const stream = new MediaStream([audioTrack]);
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
 
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-      .then(stream => {
-        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-        setMicBlocked(false);
-        audioStreamRef.current = stream;
-
-        // If the mic track ends unexpectedly (device disconnected etc.), auto-mute
-        stream.getAudioTracks()[0]?.addEventListener('ended', () => {
-          if (!cancelled) setMuted(true);
-        });
-
-        const ctx = new AudioContext();
-        audioCtxRef.current = ctx;
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 512;
-        ctx.createMediaStreamSource(stream).connect(analyser);
-        const buf = new Uint8Array(analyser.frequencyBinCount);
-
-        const tick = () => {
-          // Resume if browser suspended the AudioContext (e.g. tab backgrounded)
-          if (ctx.state === 'suspended') ctx.resume();
-          analyser.getByteFrequencyData(buf);
-          const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
-          const speaking = rms > 40;
-          setYouSpeaking(speaking);
-          // Drive halo directly — no re-render, smooth 60fps
-          if (selfHaloRef.current) {
-            if (speaking) {
-              const norm = Math.min(1, (rms - 40) / 70);
-              selfHaloRef.current.style.opacity  = String(0.1 + norm * 0.3);
-              selfHaloRef.current.style.transform = `scale(${1 + norm * 0.5})`;
-            } else {
-              selfHaloRef.current.style.opacity  = '0';
-              selfHaloRef.current.style.transform = 'scale(1)';
-            }
-          }
-          animFrameRef.current = requestAnimationFrame(tick);
-        };
-        tick();
-      })
-      .catch(() => { setMicBlocked(true); });
+    const tick = () => {
+      if (ctx.state === 'suspended') ctx.resume();
+      analyser.getByteFrequencyData(buf);
+      const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
+      const speaking = rms > 40;
+      setYouSpeaking(speaking);
+      if (selfHaloRef.current) {
+        if (speaking) {
+          const norm = Math.min(1, (rms - 40) / 70);
+          selfHaloRef.current.style.opacity   = String(0.1 + norm * 0.3);
+          selfHaloRef.current.style.transform = `scale(${1 + norm * 0.5})`;
+        } else {
+          selfHaloRef.current.style.opacity   = '0';
+          selfHaloRef.current.style.transform = 'scale(1)';
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    tick();
 
     return () => {
-      cancelled = true;
       cancelAnimationFrame(animFrameRef.current);
-      audioStreamRef.current?.getTracks().forEach(t => t.stop());
       audioCtxRef.current?.close();
-      audioStreamRef.current = null;
-      audioCtxRef.current    = null;
+      audioCtxRef.current = null;
       setYouSpeaking(false);
     };
-  }, [muted]);
+  }, [localStream, muted]);
+
+  // ── Partner speaking detection (from incoming stream) ─────────────────────
+  useEffect(() => {
+    const audioTrack = partnerStream?.getAudioTracks()[0];
+    if (!audioTrack) { setPartnerSpeaking(false); return; }
+
+    const stream = new MediaStream([audioTrack]);
+    const ctx = new AudioContext();
+    partnerAudioCtxRef.current = ctx;
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+
+    const tick = () => {
+      if (ctx.state === 'suspended') ctx.resume();
+      analyser.getByteFrequencyData(buf);
+      const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
+      setPartnerSpeaking(rms > 40);
+      partnerAnimRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(partnerAnimRef.current);
+      partnerAudioCtxRef.current?.close();
+      partnerAudioCtxRef.current = null;
+      setPartnerSpeaking(false);
+    };
+  }, [partnerStream]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -568,8 +612,13 @@ export default function SessionPage() {
           disabled={pillsChecked[0]}
           className={`mx-3 w-[calc(100%-1.5rem)] text-left rounded-xl bg-stone-50 px-3 py-2.5 flex items-center gap-3 transition-opacity ${pillsChecked[0] ? 'opacity-50' : 'hover:bg-stone-100 active:bg-stone-100'}`}
         >
-          <div className="w-6 h-6 rounded-full bg-neutral-700 flex items-center justify-center shrink-0 self-start mt-0.5">
-            <span className="text-[9px] font-black text-white leading-none">You</span>
+          <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 self-start mt-0.5 flex items-center justify-center"
+            style={{ backgroundColor: LANG_AVATAR_COLOR[myNativeLang] ?? '#374151' }}>
+            {myAvatarUrl ? (
+              <img src={myAvatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[9px] font-black text-white leading-none">{myInitials || 'You'}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
@@ -693,10 +742,20 @@ export default function SessionPage() {
         </div>
       )}
 
-      {/* ── Mic blocked nudge ── */}
-      {micBlocked && !muted && (
-        <div className="shrink-0 bg-amber-500 text-white text-xs font-medium text-center py-1.5 px-4 z-50">
-          Microphone access blocked — voice detection unavailable
+      {/* ── RTC status banners ── */}
+      {rtcState === 'connecting' && (
+        <div className="shrink-0 bg-neutral-700 text-white text-xs font-medium text-center py-1.5 px-4 z-50 flex items-center justify-center gap-2">
+          <Wifi className="w-3.5 h-3.5 animate-pulse" /> Connecting to partner…
+        </div>
+      )}
+      {rtcState === 'disconnected' && (
+        <div className="shrink-0 bg-amber-500 text-white text-xs font-medium text-center py-1.5 px-4 z-50 flex items-center justify-center gap-2">
+          <WifiOff className="w-3.5 h-3.5" /> Partner disconnected — waiting to reconnect…
+        </div>
+      )}
+      {rtcState === 'failed' && (
+        <div className="shrink-0 bg-red-500 text-white text-xs font-medium text-center py-1.5 px-4 z-50 flex items-center justify-center gap-2">
+          <WifiOff className="w-3.5 h-3.5" /> Connection failed — try ending and rejoining
         </div>
       )}
 
@@ -712,13 +771,25 @@ export default function SessionPage() {
               initials={partnerName.trim().slice(0, 2).toUpperCase()}
               isSpeaking={partnerSpeaking}
               avatarUrl={partner.avatar_url}
+              isMuted={partnerMuted}
+              videoRef={partnerVideoRef}
+              cameraOn={partnerCameraOn}
             />
 
             {/* Top bar — transparent overlay */}
-            <div className="absolute top-0 left-0 right-0 z-10 px-5 py-4 flex items-center justify-between">
+            <div className="absolute top-0 left-0 right-0 z-10 px-5 py-4 flex items-center justify-between"
+              style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 100%)' }}>
               <div>
-                <p className="font-bold text-white text-base leading-tight">{partnerName}</p>
-                <p className="text-xs text-white/60 mt-0.5">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-white text-base leading-tight">{partnerName}</p>
+                  {partnerMuted && (
+                    <span className="flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
+                      <MicOff className="w-3 h-3 text-white/80" />
+                      <span className="text-[10px] font-semibold text-white/80">Muted</span>
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-white mt-0.5">
                   {LANG_FLAGS[partner.native_language]} Native {partner.native_language}
                 </p>
               </div>
@@ -728,16 +799,16 @@ export default function SessionPage() {
             {/* Mobile: SelfPIP + prompt card stacked at bottom-right */}
             {!chatOpen && (
               <div className="md:hidden absolute bottom-3 left-3 right-3 z-10 flex flex-col items-end gap-2">
-                <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="relative" avatarUrl={myAvatarUrl} initials={myInitials} />
+                <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="relative" avatarUrl={myAvatarUrl} initials={myInitials} avatarBg={LANG_AVATAR_COLOR[myNativeLang] ?? '#2B8FFF'} />
                 <div className="w-full">{promptCard}</div>
               </div>
             )}
             {chatOpen && (
-              <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="md:hidden absolute bottom-4 right-3 z-10" avatarUrl={myAvatarUrl} initials={myInitials} />
+              <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="md:hidden absolute bottom-4 right-3 z-10" avatarUrl={myAvatarUrl} initials={myInitials} avatarBg={LANG_AVATAR_COLOR[myNativeLang] ?? '#2B8FFF'} />
             )}
 
             {/* Desktop: SelfPIP absolute bottom-right, prompt card top-right */}
-            <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="hidden md:block absolute bottom-4 right-3 z-10" avatarUrl={myAvatarUrl} initials={myInitials} />
+            <SelfPIP cameraOn={cameraOn} videoRef={videoRef} isSpeaking={youSpeaking} haloRef={selfHaloRef} positionClass="hidden md:block absolute bottom-4 right-3 z-10" avatarUrl={myAvatarUrl} initials={myInitials} avatarBg={LANG_AVATAR_COLOR[myNativeLang] ?? '#2B8FFF'} />
             {!chatOpen && (
               <div className="hidden md:block absolute top-16 right-3 w-[300px] z-10">
                 {promptCard}
@@ -843,6 +914,29 @@ export default function SessionPage() {
         </button>
       </div>
 
+      {/* ── First-session walkthrough ── */}
+      {showWalkthrough && (
+        <div className="fixed inset-0 bg-black/50 flex items-end justify-center pb-32 px-6 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4">
+            <div className="space-y-1.5">
+              <p className="font-bold text-neutral-900 text-base">How sessions work</p>
+              <p className="text-sm text-neutral-500 leading-relaxed">
+                The prompt card in the corner is your guide — not a script. Use it to keep the conversation going, check off each task when you&rsquo;re both done, and switch languages halfway through so you both get equal practice.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('mutua_seen_walkthrough', 'true');
+                setShowWalkthrough(false);
+              }}
+              className="w-full py-3 btn-primary text-white font-bold rounded-xl"
+            >
+              Got it 👍
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── End confirmation modal ── */}
       {showEndConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-6 z-50">
@@ -867,31 +961,25 @@ export default function SessionPage() {
         </div>
       )}
 
-      {/* ── 15-min checkpoint modal ── */}
+      {/* ── 10-min balance nudge ── */}
       {checkpoint && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
           <div className="bg-white border border-stone-200 rounded-2xl p-8 max-w-sm w-full text-center space-y-5 shadow-xl">
-            <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-stone-400">15 minutes</p>
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-stone-400">10 minutes in</p>
               <p className="font-bold text-lg text-neutral-900 leading-snug">
-                You&rsquo;ve been talking for 15 minutes.
+                Make sure you&rsquo;re both getting equal practice time.
               </p>
-              <p className="text-sm text-stone-500">Keep going or wrap up?</p>
+              <p className="text-sm text-stone-500">
+                Switch languages if you haven&rsquo;t already.
+              </p>
             </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setCheckpoint(false)}
-                className="w-full py-3 btn-primary text-white font-bold rounded-xl"
-              >
-                Keep going
-              </button>
-              <button
-                onClick={() => setShowEndConfirm(true)}
-                className="w-full py-3 border border-stone-200 text-stone-500 font-medium rounded-xl hover:bg-stone-50 transition-colors"
-              >
-                End session
-              </button>
-            </div>
+            <button
+              onClick={() => setCheckpoint(false)}
+              className="w-full py-3 btn-primary text-white font-bold rounded-xl"
+            >
+              Got it 👍
+            </button>
           </div>
         </div>
       )}

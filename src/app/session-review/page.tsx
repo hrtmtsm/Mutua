@@ -46,21 +46,34 @@ export default function SessionReviewPage() {
           )}
         </div>
 
-        {/* CTAs */}
-        <div className="w-full flex flex-col gap-3 pt-2">
-          <button
-            onClick={() => router.push('/session-schedule')}
-            className="w-full py-4 btn-primary text-white font-bold rounded-2xl text-base"
-          >
-            Schedule next session with {partnerName}
-          </button>
-          <button
-            onClick={() => router.push('/find-match')}
-            className="w-full py-3 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            Find another partner
-          </button>
+        {/* Schedule confirmation */}
+        <div className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-5 py-4 text-left">
+          <p className="text-sm font-semibold text-neutral-900 mb-1">Keep the momentum going</p>
+          <p className="text-sm text-neutral-500 leading-relaxed">
+            We&rsquo;ll match you with {partnerName} again using your current schedule.
+          </p>
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => router.push('/app')}
+              className="flex-1 py-3 btn-primary text-white font-bold rounded-xl text-sm"
+            >
+              Sounds good
+            </button>
+            <button
+              onClick={() => router.push('/set-availability')}
+              className="flex-1 py-3 border border-stone-200 text-stone-500 font-medium rounded-xl text-sm hover:bg-stone-100 transition-colors"
+            >
+              Update schedule
+            </button>
+          </div>
         </div>
+
+        <button
+          onClick={() => router.push('/app')}
+          className="text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
+        >
+          Find another partner
+        </button>
       </div>
 
     </div>
