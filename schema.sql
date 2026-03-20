@@ -8,7 +8,11 @@ create table if not exists profiles (
   learning_language  text        not null,
   goal               text        not null,
   comm_style         text        not null,
-  availability       text        not null,
+  availability       text,
+  practice_frequency text,
+  name               text,
+  email              text,
+  avatar_url         text,
   created_at         timestamptz default now()
 );
 
@@ -42,3 +46,43 @@ alter table waitlist_matches enable row level security;
 
 create policy "waitlist_insert" on waitlist_matches for insert with check (true);
 create policy "waitlist_select" on waitlist_matches for select using (true);
+
+-- ── Prompts ───────────────────────────────────────────────────────────────────
+-- Content table: all session prompts with translations, difficulty level,
+-- phase assignment, and optional follow-up hint.
+-- Seed this with seed_prompts.sql after running this file.
+
+create table if not exists prompts (
+  id            uuid        primary key default gen_random_uuid(),
+  phase         text        not null check (phase in ('ice', 'conv', 'reflect')),
+  level         integer     not null check (level between 1 and 3),
+  tags          text[]      default '{}',
+  hint          text,
+  translations  jsonb       not null,
+  created_at    timestamptz default now()
+);
+
+create index if not exists prompts_phase_level_idx on prompts (phase, level);
+
+alter table prompts enable row level security;
+create policy "prompts_select" on prompts for select using (true);
+
+-- ── Session prompt history ────────────────────────────────────────────────────
+-- Tracks which prompts were shown to each partner pair so recently-seen
+-- prompts are deprioritised on the next session.
+-- session_id_a / session_id_b are stored in sorted order (a < b alphabetically).
+
+create table if not exists session_prompts (
+  id            uuid        primary key default gen_random_uuid(),
+  session_id_a  text        not null,
+  session_id_b  text        not null,
+  prompt_id     uuid        not null references prompts (id),
+  shown_at      timestamptz default now()
+);
+
+create index if not exists session_prompts_pair_idx
+  on session_prompts (session_id_a, session_id_b);
+
+alter table session_prompts enable row level security;
+create policy "session_prompts_insert" on session_prompts for insert with check (true);
+create policy "session_prompts_select" on session_prompts for select using (true);

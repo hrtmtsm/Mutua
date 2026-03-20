@@ -9,6 +9,22 @@ body {
   background-color: #ffffff;
 }
 
+/* Thin scrollbar for availability grid */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d4d4d4;
+  border-radius: 4px;
+}
+
 :root {
   --font-heading: 'Satoshi', sans-serif;
 }
@@ -16,6 +32,15 @@ body {
 .font-serif {
   font-family: 'Satoshi', sans-serif !important;
 }
+
+@keyframes speak-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1);    }
+  50%       { opacity: 0.85; transform: scale(1.06); }
+}
+.animate-speak-pulse {
+  animation: speak-pulse 1.1s ease-in-out infinite;
+}
+
 
 @layer components {
   .btn-primary {

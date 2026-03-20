@@ -2,90 +2,108 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+const LANG_COLORS: Record<string, string> = {
+  Japanese: '#3b82f6', Korean: '#8b5cf6', Mandarin: '#ef4444',
+  Spanish: '#f59e0b', French: '#10b981', English: '#6366f1',
+  Portuguese: '#f97316', German: '#64748b', Italian: '#ec4899', Arabic: '#14b8a6',
+};
 
 const NAV = [
   {
     href: '/app',
-    label: 'Practice',
-    icon: (
-      <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zm8 0a3 3 0 11-6 0 3 3 0 016 0zM1 14.5a7 7 0 0114 0H1zm14.5 0a7 7 0 00-7-6.062A7 7 0 0115 14.5h.5z" />
-      </svg>
-    ),
+    label: 'Session',
+    match: ['/app', '/match-result', '/find-match', '/partners', '/session-confirmed', '/session-schedule', '/pre-session', '/session'],
+  },
+  {
+    href: '/history',
+    label: 'History',
+    match: ['/history'],
   },
   {
     href: '/messages',
     label: 'Messages',
-    icon: (
-      <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-      </svg>
-    ),
-  },
-  {
-    href: '/profile',
-    label: 'Profile',
-    icon: (
-      <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-      </svg>
-    ),
+    match: ['/messages'],
   },
 ];
 
-export default function Sidebar() {
+export default function TopNav() {
   const pathname = usePathname();
+  const [initials, setInitials]     = useState('');
+  const [avatarBg, setAvatarBg]     = useState('#171717');
+  const [hasUnread, setHasUnread]   = useState(false);
+
+  useEffect(() => {
+    const raw = localStorage.getItem('mutua_profile');
+    if (raw) {
+      const profile = JSON.parse(raw);
+      const name: string = profile.name ?? '';
+      const parts = name.trim().split(' ');
+      setInitials(parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase()
+      );
+      const lang: string = profile.native_language ?? '';
+      setAvatarBg(LANG_COLORS[lang] ?? '#171717');
+    }
+    setHasUnread(!!localStorage.getItem('mutua_unread_notification'));
+  }, [pathname]);
 
   return (
-    <>
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex flex-col w-52 min-h-screen shrink-0 bg-white border-r border-stone-100">
+    <header className="sticky top-0 z-20 bg-white border-b border-stone-100">
+      <div className="max-w-5xl mx-auto px-6 flex items-center h-14 gap-8">
 
         {/* Wordmark */}
-        <div className="px-5 py-5">
-          <span className="font-serif font-black text-xl tracking-tight text-neutral-900">Mutua</span>
-        </div>
+        <Link href="/app" className="font-serif font-black text-xl tracking-tight text-neutral-900 shrink-0">
+          Mutua
+        </Link>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map(({ href, label, icon }) => {
-            const active = pathname === href;
+        {/* Nav links */}
+        <nav className="flex items-center gap-1 flex-1">
+          {NAV.map(({ href, label, match }) => {
+            const active = match.some(p => pathname === p || pathname.startsWith(p + '/'));
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  active
-                    ? 'bg-sky-50 text-[#2B8FFF]'
-                    : 'text-stone-400 hover:text-neutral-900 hover:bg-stone-50'
+                className={`relative px-3 py-1 text-sm font-semibold transition-colors ${
+                  active ? 'text-neutral-900' : 'text-stone-400 hover:text-neutral-700'
                 }`}
               >
-                {icon}
                 {label}
+                {active && (
+                  <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-neutral-900 rounded-full" />
+                )}
               </Link>
             );
           })}
         </nav>
-      </aside>
 
-      {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 border-t border-stone-100 bg-white flex">
-        {NAV.map(({ href, label, icon }) => {
-          const active = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors ${
-                active ? 'text-[#2B8FFF]' : 'text-stone-400 hover:text-neutral-900'
-              }`}
-            >
-              {icon}
-              <span className="text-[10px] font-semibold">{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </>
+        {/* Right side: notification bell + profile avatar */}
+        <div className="flex items-center gap-3 shrink-0">
+
+          {/* Bell */}
+          <Link href="/notifications" className="relative p-1.5 text-stone-400 hover:text-neutral-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {hasUnread && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
+            )}
+          </Link>
+
+          {/* Profile avatar */}
+          <Link href="/profile" style={{ backgroundColor: avatarBg }} className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity">
+            {initials || (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
+          </Link>
+
+        </div>
+
+      </div>
+    </header>
   );
 }

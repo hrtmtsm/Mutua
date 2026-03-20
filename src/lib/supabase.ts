@@ -73,3 +73,92 @@ export async function checkWaitlistForMatch(profile: UserProfile): Promise<Waitl
   if (error) throw error;
   return (data ?? []) as WaitlistEntry[];
 }
+
+// ── Matches table ─────────────────────────────────────────────────────────────
+// SQL to create in Supabase:
+//
+// CREATE TABLE matches (
+//   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//   session_id_a        TEXT NOT NULL,
+//   session_id_b        TEXT NOT NULL,
+//   name_a              TEXT,
+//   name_b              TEXT,
+//   email_a             TEXT,
+//   email_b             TEXT,
+//   native_language_a   TEXT NOT NULL,
+//   native_language_b   TEXT NOT NULL,
+//   goal                TEXT,
+//   comm_style          TEXT,
+//   practice_frequency  TEXT,
+//   score               INTEGER DEFAULT 0,
+//   reasons             TEXT[],
+//   suggested_time      TIMESTAMPTZ,
+//   status              TEXT DEFAULT 'pending',
+//   created_at          TIMESTAMPTZ DEFAULT NOW()
+// );
+
+export type SchedulingState =
+  | 'pending_both'
+  | 'pending_a'
+  | 'pending_b'
+  | 'computing'
+  | 'no_overlap'
+  | 'scheduled'
+  | 'archived';
+
+export interface Match {
+  id:                       string;
+  session_id_a:             string;
+  session_id_b:             string;
+  name_a?:                  string;
+  name_b?:                  string;
+  email_a?:                 string;
+  email_b?:                 string;
+  native_language_a:        string;
+  native_language_b:        string;
+  goal?:                    string;
+  comm_style?:              string;
+  practice_frequency?:      string;
+  score?:                   number;
+  reasons?:                 string[];
+  suggested_time?:          string;
+  status?:                  string;
+  // Scheduling system
+  scheduling_state?:        SchedulingState;
+  scheduled_at?:            string;       // UTC ISO string
+  availability_a_set_at?:   string;
+  availability_b_set_at?:   string;
+  expires_at?:              string;
+  created_at?:              string;
+}
+
+export interface UserAvailability {
+  id?:          string;
+  user_id:      string;
+  day_of_week:  number;   // 0=Mon … 6=Sun
+  start_minute: number;   // 0–1410, step 30
+  timezone:     string;   // IANA
+  updated_at?:  string;
+}
+
+export interface ConfirmedSession {
+  id?:        string;
+  match_id:   string;
+  user_id:    string;
+  starts_at:  string;   // UTC ISO
+  ends_at:    string;   // UTC ISO (starts_at + 30 min)
+  created_at?: string;
+}
+
+export async function getMatchBySessionId(sessionId: string): Promise<Match | null> {
+  if (!isConfigured) return null;
+  const { data, error } = await supabase
+    .from('matches')
+    .select('*')
+    .or(`session_id_a.eq.${sessionId},session_id_b.eq.${sessionId}`)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as Match | null;
+}
