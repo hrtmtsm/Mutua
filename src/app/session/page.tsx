@@ -271,8 +271,8 @@ export default function SessionPage() {
   const [turnSwitched,         setTurnSwitched]         = useState(false);
   const [difficulty,           setDifficulty]           = useState(1);
 
-  const [myId]            = useState(() => localStorage.getItem('mutua_session_id') ?? '');
-  const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('mutua_seen_walkthrough'));
+  const [myId]            = useState(() => typeof window !== 'undefined' ? localStorage.getItem('mutua_session_id') ?? '' : '');
+  const [showWalkthrough, setShowWalkthrough] = useState(() => typeof window !== 'undefined' ? !localStorage.getItem('mutua_seen_walkthrough') : false);
   const [myAvatarUrl,     setMyAvatarUrl]     = useState<string | null>(null);
   const [myInitials,      setMyInitials]      = useState('');
   const [myNativeLang,    setMyNativeLang]    = useState('');
