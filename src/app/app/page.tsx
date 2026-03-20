@@ -306,6 +306,14 @@ export default function SessionPage() {
 
       const found = await loadMatch(sid);
       if (!found) loadFromLocalStorage();
+
+      // If user just saved availability, optimistically show computing state
+      // so they don't see stale data while the server catches up
+      if (localStorage.getItem('mutua_just_saved_availability')) {
+        localStorage.removeItem('mutua_just_saved_availability');
+        setPartner(p => p ? { ...p, schedulingState: 'computing', scheduledAt: null } : p);
+      }
+
       setLoading(false);
     }
     init();
