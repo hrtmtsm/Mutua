@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
-import TopNav from '@/components/Sidebar';
 
 interface Notification {
   id: string;
@@ -37,7 +36,6 @@ export default function NotificationsPage() {
 
   return (
     <AppShell>
-      <TopNav />
       <div className="max-w-2xl mx-auto px-6 py-8">
         <button
           onClick={() => router.back()}

@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+const LANG_COLORS: Record<string, string> = {
+  Japanese: '#3b82f6', Korean: '#8b5cf6', Mandarin: '#ef4444',
+  Spanish: '#f59e0b', French: '#10b981', English: '#6366f1',
+  Portuguese: '#f97316', German: '#64748b', Italian: '#ec4899', Arabic: '#14b8a6',
+};
 
 const NAV = [
   {
@@ -24,8 +29,9 @@ const NAV = [
 
 export default function TopNav() {
   const pathname = usePathname();
-  const [initials, setInitials] = useState('');
-  const [hasUnread, setHasUnread] = useState(false);
+  const [initials, setInitials]     = useState('');
+  const [avatarBg, setAvatarBg]     = useState('#171717');
+  const [hasUnread, setHasUnread]   = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem('mutua_profile');
@@ -37,6 +43,8 @@ export default function TopNav() {
         ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
         : name.slice(0, 2).toUpperCase()
       );
+      const lang: string = profile.native_language ?? '';
+      setAvatarBg(LANG_COLORS[lang] ?? '#171717');
     }
     setHasUnread(!!localStorage.getItem('mutua_unread_notification'));
   }, [pathname]);
@@ -85,7 +93,7 @@ export default function TopNav() {
           </Link>
 
           {/* Profile avatar */}
-          <Link href="/profile" className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity">
+          <Link href="/profile" style={{ backgroundColor: avatarBg }} className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity">
             {initials || (
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
