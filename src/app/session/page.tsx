@@ -914,25 +914,31 @@ export default function SessionPage() {
         </button>
       </div>
 
-      {/* ── First-session walkthrough ── */}
+      {/* ── First-session walkthrough tooltip ── */}
       {showWalkthrough && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center pb-32 px-6 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4">
-            <div className="space-y-1.5">
-              <p className="font-bold text-neutral-900 text-base">How sessions work</p>
-              <p className="text-sm text-neutral-500 leading-relaxed">
-                The prompt card in the corner is your guide — not a script. Use it to keep the conversation going, check off each task when you&rsquo;re both done, and switch languages halfway through so you both get equal practice.
-              </p>
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          {/* Dim everything except top-right */}
+          <div className="absolute inset-0 bg-black/40 pointer-events-auto"
+            onClick={() => { localStorage.setItem('mutua_seen_walkthrough', 'true'); setShowWalkthrough(false); }}
+          />
+          {/* Tooltip anchored below the prompt card */}
+          <div className="absolute top-[200px] right-3 w-[260px] pointer-events-auto">
+            {/* Arrow pointing up toward prompt card */}
+            <div className="flex justify-end pr-8">
+              <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[10px] border-l-transparent border-r-transparent border-b-white" />
             </div>
-            <button
-              onClick={() => {
-                localStorage.setItem('mutua_seen_walkthrough', 'true');
-                setShowWalkthrough(false);
-              }}
-              className="w-full py-3 btn-primary text-white font-bold rounded-xl"
-            >
-              Got it 👍
-            </button>
+            <div className="bg-white rounded-2xl p-4 shadow-xl space-y-3">
+              <p className="text-sm font-semibold text-neutral-900">Your guide, not a script</p>
+              <p className="text-sm text-neutral-500 leading-relaxed">
+                Check off tasks as you go and switch languages halfway so you both get equal practice.
+              </p>
+              <button
+                onClick={() => { localStorage.setItem('mutua_seen_walkthrough', 'true'); setShowWalkthrough(false); }}
+                className="w-full py-2.5 btn-primary text-white font-bold rounded-xl text-sm"
+              >
+                Got it 👍
+              </button>
+            </div>
           </div>
         </div>
       )}
