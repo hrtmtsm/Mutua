@@ -217,12 +217,6 @@ function SchedulingCard({
             <p className="font-bold text-neutral-500 text-lg leading-tight hover:underline">{partner.name}</p>
           </button>
           <p className="text-xs text-stone-400 mt-0.5">{nativeFlag} {partner.nativeLang} · Native</p>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <span className="text-xs font-semibold text-stone-400 self-center">Learning</span>
-            <span className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
-              {learningFlag} {partner.learningLang}
-            </span>
-          </div>
         </div>
         {s === 'scheduled' && (
           <span className="px-2.5 py-1 bg-green-50 border border-green-200 text-xs font-semibold text-green-700 rounded-full shrink-0">
@@ -244,6 +238,16 @@ function SchedulingCard({
             Finding a match
           </span>
         )}
+      </div>
+
+      {/* Learning */}
+      <div className="px-6 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">Learning</p>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
+            {learningFlag} {partner.learningLang}
+          </span>
+        </div>
       </div>
 
       {/* In common */}
