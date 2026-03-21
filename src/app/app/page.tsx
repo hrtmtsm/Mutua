@@ -359,7 +359,17 @@ export default function SessionPage() {
 
   return (
     <AppShell>
-      <main className="flex-1 px-6 py-10 max-w-lg mx-auto w-full space-y-8">
+      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-6">
+
+        {/* Context header */}
+        <div>
+          <h1 className="font-serif font-bold text-2xl text-[#171717]">Your exchange</h1>
+          <p className="text-sm text-stone-400 mt-1">
+            {loading ? '' : partner
+              ? 'You have an active language partner. Confirm your first session to get started.'
+              : 'No partner yet — we\'ll reach out when we find your match.'}
+          </p>
+        </div>
 
         {loading ? (
           <p className="text-sm text-stone-400">Loading...</p>
@@ -373,7 +383,7 @@ export default function SessionPage() {
             onViewProfile={() => router.push(`/partner/${partner.matchId}`)}
           />
         ) : (
-          <div className="bg-stone-50 border border-stone-200 border-dashed rounded-2xl px-6 py-10 text-center">
+          <div className="bg-white/60 border border-stone-200 border-dashed rounded-2xl px-6 py-10 text-center">
             <p className="text-sm text-stone-400">No partners yet — we'll email you when we find a match.</p>
           </div>
         )}
