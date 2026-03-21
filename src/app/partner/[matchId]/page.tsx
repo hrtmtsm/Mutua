@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase, getMessages, sendMessage, type Message } from '@/lib/supabase';
 import { LANG_FLAGS, LANG_AVATAR_COLOR } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
-import { ArrowLeft, MessageCircle, Send, X } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Send, X, Calendar } from 'lucide-react';
 
 interface PartnerData {
   name: string;
@@ -15,6 +15,8 @@ interface PartnerData {
   commStyle: string;
   frequency: string;
   interests?: string;
+  schedulingState: string;
+  scheduledAt: string | null;
 }
 
 function Avatar({ name, lang }: { name: string; lang: string }) {
@@ -29,9 +31,14 @@ function Avatar({ name, lang }: { name: string; lang: string }) {
   );
 }
 
-function ChatPanel({
-  matchId, myId, partnerName, onClose,
-}: {
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+}
+
+function ChatPanel({ matchId, myId, partnerName, onClose }: {
   matchId: string; myId: string; partnerName: string; onClose: () => void;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,7 +48,6 @@ function ChatPanel({
 
   useEffect(() => {
     getMessages(matchId).then(setMessages);
-
     const channel = supabase
       .channel(`partner-chat:${matchId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
@@ -49,17 +55,11 @@ function ChatPanel({
         if (msg.match_id === matchId) setMessages(prev => [...prev, msg]);
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [matchId]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, []);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 50); }, []);
 
   const send = async () => {
     const text = draft.trim();
@@ -71,16 +71,12 @@ function ChatPanel({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0">
       <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-sm flex flex-col overflow-hidden" style={{ height: '70vh' }}>
-
-        {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100 shrink-0">
           <button onClick={onClose} className="text-stone-400 hover:text-neutral-700 transition-colors">
             <X className="w-4 h-4" />
           </button>
           <p className="text-sm font-semibold text-neutral-900 flex-1">{partnerName}</p>
         </div>
-
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
           {messages.length === 0 ? (
             <p className="text-xs text-stone-400 text-center mt-6">No messages yet. Say hello!</p>
@@ -96,8 +92,6 @@ function ChatPanel({
           })}
           <div ref={bottomRef} />
         </div>
-
-        {/* Compose */}
         <div className="px-4 py-3 border-t border-stone-100 flex gap-2 items-center shrink-0">
           <input
             ref={inputRef}
@@ -108,15 +102,10 @@ function ChatPanel({
             placeholder="Send a message..."
             className="flex-1 text-sm px-3 py-2 border border-stone-200 rounded-xl focus:outline-none focus:border-neutral-400 bg-stone-50"
           />
-          <button
-            onClick={send}
-            disabled={!draft.trim()}
-            className="p-2.5 btn-primary text-white rounded-xl disabled:opacity-40"
-          >
+          <button onClick={send} disabled={!draft.trim()} className="p-2.5 btn-primary text-white rounded-xl disabled:opacity-40">
             <Send className="w-4 h-4" />
           </button>
         </div>
-
       </div>
     </div>
   );
@@ -126,10 +115,10 @@ export default function PartnerProfilePage() {
   const { matchId } = useParams<{ matchId: string }>();
   const router = useRouter();
 
-  const [partner, setPartner] = useState<PartnerData | null>(null);
-  const [myId, setMyId]       = useState('');
+  const [partner, setPartner]   = useState<PartnerData | null>(null);
+  const [myId, setMyId]         = useState('');
   const [chatOpen, setChatOpen] = useState(false);
-  const [loading, setLoading]  = useState(true);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     const sid = localStorage.getItem('mutua_session_id') ?? '';
@@ -153,15 +142,18 @@ export default function PartnerProfilePage() {
         .eq('session_id', partnerSessionId)
         .maybeSingle();
 
+      const baseName = isA ? (match.name_b ?? 'Partner') : (match.name_a ?? 'Partner');
+
       setPartner({
-        name:        isA ? (match.name_b ?? 'Partner') : (match.name_a ?? 'Partner'),
-        nativeLang:  isA ? match.native_language_b : match.native_language_a,
-        learningLang: isA ? match.native_language_a : match.native_language_b,
-        goal:        match.goal        ?? '',
-        commStyle:   match.comm_style  ?? '',
-        frequency:   match.practice_frequency ?? '',
-        interests:   profile?.interests ?? '',
-        ...(profile?.name ? { name: profile.name } : {}),
+        name:             profile?.name ?? baseName,
+        nativeLang:       isA ? match.native_language_b : match.native_language_a,
+        learningLang:     isA ? match.native_language_a : match.native_language_b,
+        goal:             match.goal              ?? '',
+        commStyle:        match.comm_style        ?? '',
+        frequency:        match.practice_frequency ?? '',
+        interests:        profile?.interests      ?? '',
+        schedulingState:  match.scheduling_state  ?? 'pending_both',
+        scheduledAt:      match.scheduled_at      ?? null,
       });
 
       setLoading(false);
@@ -170,32 +162,29 @@ export default function PartnerProfilePage() {
     load();
   }, [matchId]);
 
-  if (loading) {
-    return (
-      <AppShell>
-        <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
-          <p className="text-sm text-stone-400">Loading...</p>
-        </main>
-      </AppShell>
-    );
-  }
+  if (loading) return (
+    <AppShell>
+      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
+        <p className="text-sm text-stone-400">Loading...</p>
+      </main>
+    </AppShell>
+  );
 
-  if (!partner) {
-    return (
-      <AppShell>
-        <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
-          <p className="text-sm text-stone-400">Partner not found.</p>
-        </main>
-      </AppShell>
-    );
-  }
+  if (!partner) return (
+    <AppShell>
+      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
+        <p className="text-sm text-stone-400">Partner not found.</p>
+      </main>
+    </AppShell>
+  );
 
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
+  const s = partner.schedulingState;
 
   return (
     <AppShell>
-      <main className="flex-1 max-w-2xl mx-auto w-full">
+      <main className="flex-1 max-w-2xl mx-auto w-full pb-10">
 
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-4">
@@ -212,7 +201,7 @@ export default function PartnerProfilePage() {
         </div>
 
         {/* Hero */}
-        <div className="px-6 pb-8 flex flex-col items-center text-center gap-4">
+        <div className="px-6 pb-8 flex flex-col items-center text-center gap-3">
           <Avatar name={partner.name} lang={partner.nativeLang} />
           <div>
             <h1 className="font-serif font-bold text-2xl text-[#171717]">{partner.name}</h1>
@@ -220,37 +209,49 @@ export default function PartnerProfilePage() {
           </div>
         </div>
 
-        {/* Info cards */}
         <div className="px-6 space-y-4">
 
-          {/* Learning */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5">
-            <p className="text-xs font-semibold text-stone-400 mb-3">Learning</p>
-            <span className="px-3 py-1.5 bg-stone-100 text-sm font-medium text-stone-600 rounded-full">
-              {learningFlag} {partner.learningLang}
-            </span>
+          {/* Session */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-3">
+            <p className="text-xs font-semibold text-stone-400">Session</p>
+
+            {s === 'scheduled' && partner.scheduledAt ? (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-green-50 border border-green-200 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-stone-400">Confirmed session</p>
+                  <p className="font-semibold text-neutral-900 text-sm mt-0.5">{fmtDate(partner.scheduledAt)}</p>
+                </div>
+              </div>
+            ) : s === 'computing' ? (
+              <p className="text-sm text-stone-500">Finding a time that works for both of you…</p>
+            ) : s === 'no_overlap' ? (
+              <p className="text-sm text-stone-500">No overlapping availability yet. Update your free times to get matched.</p>
+            ) : (
+              <p className="text-sm text-stone-500">Waiting on availability from both sides.</p>
+            )}
           </div>
 
-          {/* In common */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5">
-            <p className="text-xs font-semibold text-stone-400 mb-3">In common</p>
-            <div className="flex flex-wrap gap-2">
-              {[partner.goal, partner.commStyle, partner.frequency].filter(Boolean).map((v, i) => (
-                <span key={i} className="px-3 py-1.5 bg-stone-100 text-sm font-medium text-stone-600 rounded-full">{v}</span>
-              ))}
-            </div>
+          {/* Preferences */}
+          <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
+            <p className="text-xs font-semibold text-stone-400 px-5 pt-5 pb-3">Preferences</p>
+            {[
+              { label: 'Learning',   value: `${learningFlag} ${partner.learningLang}` },
+              { label: 'Goal',       value: partner.goal },
+              { label: 'Style',      value: partner.commStyle },
+              { label: 'Frequency',  value: partner.frequency },
+              ...(partner.interests ? [{ label: 'Interests', value: partner.interests }] : []),
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between px-5 py-3 border-t border-stone-100">
+                <span className="text-xs font-semibold text-stone-400">{label}</span>
+                <span className="text-sm font-medium text-neutral-700">{value}</span>
+              </div>
+            ))}
           </div>
-
-          {/* Interests */}
-          {partner.interests && (
-            <div className="bg-white border border-stone-200 rounded-2xl p-5">
-              <p className="text-xs font-semibold text-stone-400 mb-2">Interests</p>
-              <p className="text-sm text-neutral-600">{partner.interests}</p>
-            </div>
-          )}
 
         </div>
-
       </main>
 
       {chatOpen && (
