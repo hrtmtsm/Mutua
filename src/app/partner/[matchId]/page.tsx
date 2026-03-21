@@ -17,10 +17,18 @@ interface PartnerData {
   interests?: string;
   schedulingState: string;
   scheduledAt: string | null;
+  avatarUrl: string | null;
 }
 
-function Avatar({ name, lang }: { name: string; lang: string }) {
+function Avatar({ name, lang, avatarUrl }: { name: string; lang: string; avatarUrl?: string | null }) {
   const bg = LANG_AVATAR_COLOR[lang] ?? '#3b82f6';
+  if (avatarUrl) {
+    return (
+      <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0">
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
     <div
       style={{ backgroundColor: bg }}
@@ -138,7 +146,7 @@ export default function PartnerProfilePage() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, interests')
+        .select('name, interests, avatar_url')
         .eq('session_id', partnerSessionId)
         .maybeSingle();
 
@@ -154,6 +162,7 @@ export default function PartnerProfilePage() {
         interests:        profile?.interests      ?? '',
         schedulingState:  match.scheduling_state  ?? 'pending_both',
         scheduledAt:      match.scheduled_at      ?? null,
+        avatarUrl:        profile?.avatar_url     ?? null,
       });
 
       setLoading(false);
@@ -202,7 +211,7 @@ export default function PartnerProfilePage() {
 
         {/* Hero */}
         <div className="px-6 pb-8 flex flex-col items-center text-center gap-3">
-          <Avatar name={partner.name} lang={partner.nativeLang} />
+          <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} />
           <div>
             <h1 className="font-serif font-bold text-3xl text-[#171717]">{partner.name}</h1>
             <p className="text-sm text-stone-400 mt-1">{nativeFlag} {partner.nativeLang} · Native</p>
