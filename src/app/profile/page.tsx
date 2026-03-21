@@ -12,6 +12,92 @@ import AvailabilityPicker from '@/components/AvailabilityPicker';
 import { Pencil, Camera, ChevronDown } from 'lucide-react';
 
 
+const CROP_SIZE = 260;
+
+function CropModal({ src, onConfirm, onCancel }: { src: string; onConfirm: (blob: Blob) => void; onCancel: () => void }) {
+  const imgRef   = useRef<HTMLImageElement>(null);
+  const [offset, setOffset]   = useState({ x: 0, y: 0 });
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
+
+  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const s   = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
+    const w   = img.naturalWidth * s;
+    const h   = img.naturalHeight * s;
+    setImgSize({ w, h });
+    setOffset({ x: (CROP_SIZE - w) / 2, y: (CROP_SIZE - h) / 2 });
+  };
+
+  const clamp = (ox: number, oy: number, w: number, h: number) => ({
+    x: Math.min(0, Math.max(CROP_SIZE - w, ox)),
+    y: Math.min(0, Math.max(CROP_SIZE - h, oy)),
+  });
+
+  const startDrag = (cx: number, cy: number) => {
+    dragRef.current = { startX: cx, startY: cy, ox: offset.x, oy: offset.y };
+  };
+  const moveDrag = (cx: number, cy: number) => {
+    if (!dragRef.current) return;
+    const { startX, startY, ox, oy } = dragRef.current;
+    setOffset(clamp(ox + cx - startX, oy + cy - startY, imgSize.w, imgSize.h));
+  };
+  const endDrag = () => { dragRef.current = null; };
+
+  const handleConfirm = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width  = CROP_SIZE;
+    canvas.height = CROP_SIZE;
+    const ctx = canvas.getContext('2d')!;
+    const img = imgRef.current!;
+    ctx.drawImage(img, offset.x, offset.y, imgSize.w, imgSize.h);
+    canvas.toBlob(blob => { if (blob) onConfirm(blob); }, 'image/jpeg', 0.92);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full max-w-sm">
+        <div className="px-5 py-4 border-b border-stone-100">
+          <p className="text-sm font-semibold text-neutral-900">Crop photo</p>
+          <p className="text-xs text-stone-400 mt-0.5">Drag to reposition</p>
+        </div>
+
+        <div className="flex justify-center py-6">
+          <div
+            className="relative overflow-hidden rounded-full select-none"
+            style={{ width: CROP_SIZE, height: CROP_SIZE, cursor: 'grab' }}
+            onMouseDown={e => startDrag(e.clientX, e.clientY)}
+            onMouseMove={e => moveDrag(e.clientX, e.clientY)}
+            onMouseUp={endDrag}
+            onMouseLeave={endDrag}
+            onTouchStart={e => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
+            onTouchMove={e => { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }}
+            onTouchEnd={endDrag}
+          >
+            <img
+              ref={imgRef}
+              src={src}
+              alt=""
+              onLoad={onLoad}
+              draggable={false}
+              style={{ position: 'absolute', left: offset.x, top: offset.y, width: imgSize.w, height: imgSize.h }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-5 pb-5">
+          <button onClick={onCancel} className="flex-1 py-2.5 text-sm font-semibold text-stone-500 border border-stone-200 rounded-full hover:bg-stone-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleConfirm} className="flex-1 py-2.5 btn-primary text-white text-sm font-semibold rounded-full">
+            Use photo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const router     = useRouter();
   const fileRef    = useRef<HTMLInputElement>(null);
@@ -70,18 +156,27 @@ export default function ProfilePage() {
     loadAvailability();
   }, []);
 
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
   const handleAvatarClick = () => fileRef.current?.click();
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !profile) return;
+    if (!file) return;
+    setCropSrc(URL.createObjectURL(file));
+    e.target.value = '';
+  };
+
+  const handleCropConfirm = async (blob: Blob) => {
+    if (!profile) return;
+    setCropSrc(null);
     setUploading(true);
-    const ext  = file.name.split('.').pop();
-    const path = `${profile.session_id}.${ext}`;
+    const path = `${profile.session_id}.jpg`;
+    const file = new File([blob], path, { type: 'image/jpeg' });
     const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (!error) {
       const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-      const url = data.publicUrl;
+      const url = data.publicUrl + '?t=' + Date.now();
       setAvatarUrl(url);
       await supabase.from('profiles').update({ avatar_url: url }).eq('session_id', profile.session_id);
       const stored = localStorage.getItem('mutua_profile');
@@ -138,6 +233,8 @@ export default function ProfilePage() {
   );
 
   return (
+    <>
+    {cropSrc && <CropModal src={cropSrc} onConfirm={handleCropConfirm} onCancel={() => setCropSrc(null)} />}
     <AppShell>
       <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-5">
 
@@ -310,5 +407,6 @@ export default function ProfilePage() {
 
       </main>
     </AppShell>
+    </>
   );
 }

@@ -28,6 +28,7 @@ function useNavState() {
   const pathname = usePathname();
   const [initials, setInitials]   = useState('');
   const [avatarBg, setAvatarBg]   = useState('#171717');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
@@ -42,11 +43,12 @@ function useNavState() {
       );
       const lang: string = profile.native_language ?? '';
       setAvatarBg(LANG_AVATAR_COLOR[lang] ?? '#171717');
+      setAvatarUrl(profile.avatar_url ?? '');
     }
     setHasUnread(!!localStorage.getItem('mutua_unread_notification'));
   }, [pathname]);
 
-  return { pathname, initials, avatarBg, hasUnread };
+  return { pathname, initials, avatarBg, avatarUrl, hasUnread };
 }
 
 // ── Thread list ───────────────────────────────────────────────────────────────
@@ -195,7 +197,7 @@ function MessageChat({
 // ── Top nav ───────────────────────────────────────────────────────────────────
 
 export default function TopNav() {
-  const { pathname, initials, avatarBg, hasUnread } = useNavState();
+  const { pathname, initials, avatarBg, avatarUrl, hasUnread } = useNavState();
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxTab, setInboxTab]   = useState<'notifications' | 'messages'>('notifications');
   const [msgView, setMsgView]     = useState<'list' | 'chat'>('list');
@@ -360,8 +362,12 @@ export default function TopNav() {
           )}
 
           {/* Profile avatar */}
-          <Link href="/profile" style={{ backgroundColor: avatarBg }} className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity">
-            {initials || <User className="w-4 h-4" />}
+          <Link href="/profile" className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity shrink-0"
+            style={avatarUrl ? undefined : { backgroundColor: avatarBg }}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              : (initials || <User className="w-4 h-4" />)
+            }
           </Link>
 
         </div>
