@@ -29,7 +29,7 @@ function useNavState() {
   const [initials, setInitials]   = useState('');
   const [avatarBg, setAvatarBg]   = useState('#171717');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [hasUnread, setHasUnread] = useState(false);
+  const [hasUnread, setHasUnreadState] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem('mutua_profile');
@@ -45,10 +45,11 @@ function useNavState() {
       setAvatarBg(LANG_AVATAR_COLOR[lang] ?? '#171717');
       setAvatarUrl(profile.avatar_url ?? '');
     }
-    setHasUnread(!!localStorage.getItem('mutua_unread_notification'));
+    setHasUnreadState(!!localStorage.getItem('mutua_unread_notification'));
   }, [pathname]);
 
-  return { pathname, initials, avatarBg, avatarUrl, hasUnread };
+  const setHasUnread = (v: boolean) => setHasUnreadState(v);
+  return { pathname, initials, avatarBg, avatarUrl, hasUnread, setHasUnread };
 }
 
 // ── Thread list ───────────────────────────────────────────────────────────────
@@ -225,7 +226,7 @@ function MessageChat({
 // ── Top nav ───────────────────────────────────────────────────────────────────
 
 export default function TopNav() {
-  const { pathname, initials, avatarBg, avatarUrl, hasUnread } = useNavState();
+  const { pathname, initials, avatarBg, avatarUrl, hasUnread, setHasUnread } = useNavState();
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxTab, setInboxTab]   = useState<'notifications' | 'messages'>('notifications');
   const [msgView, setMsgView]     = useState<'list' | 'chat'>('list');
@@ -329,7 +330,12 @@ export default function TopNav() {
 
           {/* Bell */}
           <button
-            onClick={() => { setInboxOpen(o => !o); setMsgView('list'); }}
+            onClick={() => {
+              setInboxOpen(o => !o);
+              setMsgView('list');
+              setHasUnread(false);
+              localStorage.removeItem('mutua_unread_notification');
+            }}
             className="relative p-1.5 text-stone-400 hover:text-neutral-700 transition-colors"
           >
             <Bell className="w-5 h-5" />
