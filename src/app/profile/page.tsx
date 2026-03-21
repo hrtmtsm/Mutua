@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [goal,       setGoal]       = useState<Goal>('Casual conversation');
   const [commStyle,  setCommStyle]  = useState<CommStyle>('Voice call');
   const [practiceFrequency, setPracticeFrequency] = useState<Frequency>('Once a week');
+  const [interests, setInterests] = useState('');
 
   useEffect(() => {
     const stored = localStorage.getItem('mutua_profile');
@@ -50,6 +51,7 @@ export default function ProfilePage() {
       setGoal(p.goal);
       setCommStyle(p.comm_style);
       if (p.practice_frequency) setPracticeFrequency(p.practice_frequency);
+      if (p.interests) setInterests(p.interests);
     }
 
     async function loadAvailability() {
@@ -115,6 +117,7 @@ export default function ProfilePage() {
       goal,
       comm_style:         commStyle,
       practice_frequency: practiceFrequency,
+      interests:          interests.trim() || undefined,
     };
     localStorage.setItem('mutua_profile', JSON.stringify(updated));
     setProfile(updated);
@@ -227,6 +230,7 @@ export default function ProfilePage() {
                   { label: 'Goal',             value: goal,             editor: <SelectWrap><select value={goal} onChange={e => setGoal(e.target.value as Goal)} className={selectClass}>{GOALS.map(g => <option key={g}>{g}</option>)}</select></SelectWrap> },
                   { label: 'Style',            value: commStyle,        editor: <SelectWrap><select value={commStyle} onChange={e => setCommStyle(e.target.value as CommStyle)} className={selectClass}>{COMM_STYLES.map(s => <option key={s}>{s}</option>)}</select></SelectWrap> },
                   { label: 'Frequency',        value: practiceFrequency, editor: <SelectWrap><select value={practiceFrequency} onChange={e => setPracticeFrequency(e.target.value as Frequency)} className={selectClass}>{FREQUENCY.map(f => <option key={f}>{f}</option>)}</select></SelectWrap> },
+                  { label: 'Interests',        value: interests || '—',  editor: <input type="text" value={interests} onChange={e => setInterests(e.target.value)} placeholder="e.g. music, travel, cooking" className="text-sm font-semibold text-neutral-900 border border-stone-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-neutral-900 bg-stone-50 w-48" /> },
                 ].map(({ label, value, editor }) => (
                   <div key={label} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
                     <span className="text-xs font-bold uppercase tracking-widest text-stone-400">{label}</span>

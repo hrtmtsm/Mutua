@@ -239,31 +239,17 @@ function SchedulingCard({
         )}
       </div>
 
-      {/* Language blocks */}
-      <div className="px-6 pb-4 grid grid-cols-2 gap-3">
-        <div className="bg-white border border-stone-100 rounded-xl px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Native</p>
-          <p className="font-bold text-neutral-500 text-base">{nativeFlag} {partner.nativeLang}</p>
-        </div>
-        <div className="bg-white border border-stone-100 rounded-xl px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Practicing</p>
-          <p className="font-bold text-neutral-500 text-base">{learningFlag} {partner.learningLang}</p>
+      {/* In common */}
+      <div className="px-6 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">In common</p>
+        <div className="flex flex-wrap gap-1.5">
+          {[partner.goal, partner.commStyle, partner.frequency].filter(Boolean).map((v, i) => (
+            <span key={i} className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
+              {v}
+            </span>
+          ))}
         </div>
       </div>
-
-      {/* In common */}
-      {partner.reasons.length > 0 && (
-        <div className="px-6 pb-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">In common</p>
-          <div className="flex flex-wrap gap-1.5">
-            {partner.reasons.slice(0, 3).map((r, i) => (
-              <span key={i} className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
-                {r}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── State-driven footer ── */}
       <div className="px-6 pb-5 pt-4 border-t border-stone-100">

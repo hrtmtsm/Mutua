@@ -49,6 +49,7 @@ export interface UserProfile {
   practice_frequency?: Frequency;
   name?:               string;            // display name — not persisted to DB
   avatar_url?:         string;            // profile photo URL — optional
+  interests?:          string;            // comma-separated interests e.g. "music, travel"
   created_at?:         string;
 }
 
