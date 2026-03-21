@@ -100,8 +100,8 @@ export default function HistoryPage() {
                   </div>
 
                   {/* Initials avatar */}
-                  <div className="w-10 h-10 rounded-full bg-[#2B8FFF]/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-[#2B8FFF]">
+                  <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-black text-white">
                       {p.partnerName.trim().slice(0, 2).toUpperCase()}
                     </span>
                   </div>
@@ -115,12 +115,29 @@ export default function HistoryPage() {
                 )}
 
                 {/* CTA */}
-                <button
-                  onClick={() => router.push('/session-schedule')}
-                  className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
-                >
-                  Schedule next session
-                </button>
+                {p.scheduledFor ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => router.push('/app')}
+                      className="flex-1 py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
+                    >
+                      Sounds good
+                    </button>
+                    <button
+                      onClick={() => router.push('/set-availability')}
+                      className="flex-1 py-2.5 border border-stone-200 text-stone-500 text-sm font-medium rounded-xl hover:bg-stone-100 transition-colors"
+                    >
+                      Update schedule
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => router.push('/set-availability')}
+                    className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
+                  >
+                    Schedule next session
+                  </button>
+                )}
               </div>
             ))}
           </div>
