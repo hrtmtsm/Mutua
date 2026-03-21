@@ -205,7 +205,7 @@ function SchedulingCard({
     (s === 'pending_b' && partner.iAmA);
 
   return (
-    <div className="overflow-hidden bg-stone-50 rounded-3xl">
+    <div className="overflow-hidden bg-white rounded-3xl">
 
       {/* Header */}
       <div className="px-6 pt-5 pb-4 flex items-center gap-4">
@@ -241,11 +241,11 @@ function SchedulingCard({
 
       {/* Language blocks */}
       <div className="px-6 pb-4 grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-xl px-4 py-3">
+        <div className="bg-slate-50 rounded-xl px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Native</p>
           <p className="font-bold text-neutral-500 text-base">{nativeFlag} {partner.nativeLang}</p>
         </div>
-        <div className="bg-white rounded-xl px-4 py-3">
+        <div className="bg-slate-50 rounded-xl px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1">Practicing</p>
           <p className="font-bold text-neutral-500 text-base">{learningFlag} {partner.learningLang}</p>
         </div>
