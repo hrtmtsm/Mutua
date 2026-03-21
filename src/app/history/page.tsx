@@ -61,6 +61,7 @@ function groupByPartner(sessions: SessionEntry[]): PartnerSummary[] {
 export default function HistoryPage() {
   const router = useRouter();
   const [partners, setPartners] = useState<PartnerSummary[]>([]);
+  const [modalPartner, setModalPartner] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem('mutua_history');
@@ -117,7 +118,7 @@ export default function HistoryPage() {
                 {/* CTA — only show when not yet scheduled */}
                 {!p.scheduledFor && (
                   <button
-                    onClick={() => router.push(`/session-review?partner=${encodeURIComponent(p.partnerName)}`)}
+                    onClick={() => setModalPartner(p.partnerName)}
                     className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
                   >
                     Schedule next session
@@ -128,6 +129,32 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
+      {/* Schedule modal */}
+      {modalPartner && (
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 px-4 pb-6 sm:pb-0">
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl px-5 py-5 w-full max-w-sm">
+            <p className="font-bold text-neutral-900 mb-1">Keep the momentum going</p>
+            <p className="text-sm text-neutral-500 leading-relaxed">
+              We'll match you with {modalPartner} again using your current schedule.
+            </p>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setModalPartner(null)}
+                className="flex-1 py-3 btn-primary text-white font-bold rounded-xl text-sm"
+              >
+                Sounds good
+              </button>
+              <button
+                onClick={() => router.push('/set-availability')}
+                className="flex-1 py-3 border border-stone-200 bg-white text-stone-500 font-medium rounded-xl text-sm hover:bg-stone-100 transition-colors"
+              >
+                Update schedule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </AppShell>
   );
 }
