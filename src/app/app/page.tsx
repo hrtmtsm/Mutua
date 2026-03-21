@@ -25,13 +25,13 @@ interface PartnerCard {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Avatar({ name, lang, size = 'md' }: { name: string; lang: string; size?: 'sm' | 'md' }) {
+function Avatar({ name, lang, size = 'md' }: { name: string; lang: string; size?: 'sm' | 'md' | 'lg' }) {
   const bg  = LANG_AVATAR_COLOR[lang] ?? '#3b82f6';
-  const cls = size === 'sm' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base';
+  const cls = size === 'lg' ? 'w-16 h-16 text-xl' : size === 'sm' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base';
   return (
     <div
       style={{ backgroundColor: bg }}
-      className={`${cls} rounded-xl flex items-center justify-center font-black text-white shrink-0`}
+      className={`${cls} rounded-2xl flex items-center justify-center font-black text-white shrink-0`}
     >
       {name.trim().slice(0, 2).toUpperCase()}
     </div>
@@ -96,123 +96,86 @@ function SchedulingCard({
     (s === 'pending_a' && !partner.iAmA) ||
     (s === 'pending_b' && partner.iAmA);
 
+  const avatarBg = LANG_AVATAR_COLOR[partner.nativeLang] ?? '#3b82f6';
+
   return (
-    <div className="overflow-hidden bg-white border border-stone-200 rounded-3xl">
+    <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
 
-      {/* Header */}
-      <div className="px-6 pt-5 pb-4 flex items-center gap-4">
-        <button onClick={onViewProfile} className="shrink-0">
-          <Avatar name={partner.name} lang={partner.nativeLang} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <button onClick={onViewProfile} className="text-left">
-            <p className="font-bold text-neutral-500 text-lg leading-tight hover:underline">{partner.name}</p>
-          </button>
-          <p className="text-xs text-stone-400 mt-0.5">{nativeFlag} {partner.nativeLang} · Native</p>
-        </div>
-        {s === 'scheduled' && (
-          <span className="px-2.5 py-1 bg-green-50 border border-green-200 text-xs font-semibold text-green-700 rounded-full shrink-0">
-            Scheduled
-          </span>
-        )}
-        {waitingOnPartner && (
-          <span className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-semibold text-stone-500 rounded-full shrink-0">
-            Waiting
-          </span>
-        )}
-        {s === 'no_overlap' && (
-          <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-600 rounded-full shrink-0">
-            No slots matched
-          </span>
-        )}
-        {s === 'computing' && (
-          <span className="px-2.5 py-1 bg-sky-50 border border-sky-200 text-xs font-semibold text-[#2B8FFF] rounded-full shrink-0">
-            Finding a match
-          </span>
-        )}
-      </div>
-
-      {/* Learning */}
-      <div className="px-6 pb-4">
-        <p className="text-xs font-semibold text-stone-400 mb-2">Learning</p>
-        <div className="flex flex-wrap gap-1.5">
-          <span className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">
-            {learningFlag} {partner.learningLang}
-          </span>
-        </div>
-      </div>
-
-      {/* In common */}
-      <div className="px-6 pb-4">
-        <p className="text-xs font-semibold text-stone-400 mb-2">In common</p>
-        <div className="flex flex-wrap gap-1.5">
-          {[partner.goal, partner.commStyle, partner.frequency].filter(Boolean).map((v, i) => (
-            <span key={i} className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">
-              {v}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* ── State-driven footer ── */}
-      <div className="px-6 pb-5 pt-4 border-t border-stone-100">
-
-        {/* Schedule exchange CTA */}
-        {iNeedToSet && (
-          <button
-            onClick={onBookExchange}
-            className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
-          >
-            Schedule your exchange →
-          </button>
-        )}
-
-        {/* Waiting on partner */}
-        {waitingOnPartner && (
-          <p className="text-sm text-stone-500">
-            You're all set. Waiting for <span className="font-semibold text-neutral-500">{partner.name}</span> to share their availability.
-          </p>
-        )}
-
-        {/* Computing */}
-        {s === 'computing' && (
-          <p className="text-sm text-stone-500">
-            Looking for a time that works for both of you.
-          </p>
-        )}
-
-        {/* No overlap */}
-        {s === 'no_overlap' && (
-          <div className="space-y-3">
-            <p className="text-sm text-stone-500">
-              Your schedules don't overlap yet. Update your free times and we'll match you automatically.
+      {/* Colored hero strip */}
+      <button
+        onClick={onViewProfile}
+        className="w-full text-left block"
+        style={{ backgroundColor: avatarBg + '18' }}
+      >
+        <div className="px-6 pt-6 pb-5 flex items-end gap-4">
+          <Avatar name={partner.name} lang={partner.nativeLang} size="lg" />
+          <div className="flex-1 min-w-0 pb-0.5">
+            <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
+            <p className="text-sm text-stone-500 mt-0.5">
+              {nativeFlag} {partner.nativeLang} · learning {learningFlag} {partner.learningLang}
             </p>
-            <button
-              onClick={onBookExchange}
-              className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
-            >
-              Update my free times →
+          </div>
+          {s === 'scheduled' && (
+            <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full shrink-0 self-start">Scheduled</span>
+          )}
+          {waitingOnPartner && (
+            <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full shrink-0 self-start">Waiting</span>
+          )}
+          {s === 'no_overlap' && (
+            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full shrink-0 self-start">No overlap</span>
+          )}
+          {s === 'computing' && (
+            <span className="text-xs font-semibold text-[#2B8FFF] bg-blue-50 px-2.5 py-1 rounded-full shrink-0 self-start">Matching…</span>
+          )}
+        </div>
+      </button>
+
+      {/* Shared context — no section label */}
+      <div className="px-6 py-4 flex flex-wrap gap-1.5 border-t border-stone-100">
+        {[partner.goal, partner.commStyle, partner.frequency].filter(Boolean).map((v, i) => (
+          <span key={i} className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">{v}</span>
+        ))}
+      </div>
+
+      {/* State-driven footer */}
+      <div className="px-6 pb-5 pt-1 border-t border-stone-100">
+
+        {iNeedToSet && (
+          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl mt-3">
+            Pick a time to meet →
+          </button>
+        )}
+
+        {waitingOnPartner && (
+          <p className="text-sm text-stone-400 mt-3">
+            You're set — waiting on <span className="font-medium text-neutral-600">{partner.name}</span> to share their availability.
+          </p>
+        )}
+
+        {s === 'computing' && (
+          <p className="text-sm text-stone-400 mt-3">Finding a time that works for both of you…</p>
+        )}
+
+        {s === 'no_overlap' && (
+          <div className="space-y-3 mt-3">
+            <p className="text-sm text-stone-400">No overlapping slots yet. Update your free times and we'll keep trying.</p>
+            <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl">
+              Update my availability →
             </button>
           </div>
         )}
 
-        {/* Scheduled */}
         {s === 'scheduled' && partner.scheduledAt && (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 mt-3">
             <div>
-              <p className="text-xs text-stone-400">We found your first session</p>
-              <p className="font-semibold text-neutral-500 text-sm mt-0.5">
-                {fmtScheduledAt(partner.scheduledAt)}
-              </p>
+              <p className="text-xs text-stone-400">First session</p>
+              <p className="font-semibold text-neutral-800 text-sm mt-0.5">{fmtScheduledAt(partner.scheduledAt)}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button onClick={onReschedule} className="text-sm text-stone-400 hover:text-neutral-500 font-medium transition-colors">
+            <div className="flex items-center gap-3 shrink-0">
+              <button onClick={onReschedule} className="text-sm text-stone-400 hover:text-neutral-600 font-medium transition-colors">
                 Reschedule
               </button>
-              <button
-                onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)}
-                className="px-5 py-2.5 btn-primary text-white text-sm font-bold rounded-xl shadow-sm"
-              >
+              <button onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)} className="px-5 py-2.5 btn-primary text-white text-sm font-bold rounded-xl">
                 Confirm →
               </button>
             </div>
@@ -396,9 +359,7 @@ export default function SessionPage() {
 
   return (
     <AppShell>
-      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-8">
-
-        <h1 className="font-serif font-bold text-2xl text-[#171717]">Session</h1>
+      <main className="flex-1 px-6 py-10 max-w-lg mx-auto w-full space-y-8">
 
         {loading ? (
           <p className="text-sm text-stone-400">Loading...</p>
