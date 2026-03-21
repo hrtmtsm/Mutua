@@ -114,23 +114,8 @@ export default function HistoryPage() {
                   </p>
                 )}
 
-                {/* CTA */}
-                {p.scheduledFor ? (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => router.push('/app')}
-                      className="flex-1 py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
-                    >
-                      Sounds good
-                    </button>
-                    <button
-                      onClick={() => router.push('/set-availability')}
-                      className="flex-1 py-2.5 border border-stone-200 text-stone-500 text-sm font-medium rounded-xl hover:bg-stone-100 transition-colors"
-                    >
-                      Update schedule
-                    </button>
-                  </div>
-                ) : (
+                {/* CTA — only show when not yet scheduled */}
+                {!p.scheduledFor && (
                   <button
                     onClick={() => router.push('/set-availability')}
                     className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
