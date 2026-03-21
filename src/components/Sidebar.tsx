@@ -248,8 +248,12 @@ export default function TopNav() {
         .channel(`inbox:${match.id}`)
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'messages',
-          filter: `match_id=eq.${match.id}`,
-        }, payload => setMessages(prev => [...prev, payload.new as Message]))
+        }, payload => {
+          const msg = payload.new as Message;
+          if (msg.match_id === match.id) {
+            setMessages(prev => [...prev, msg]);
+          }
+        })
         .subscribe();
     }
     load();

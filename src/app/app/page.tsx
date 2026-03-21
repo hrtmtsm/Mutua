@@ -85,9 +85,11 @@ function PartnerModal({ partner, mySessionId, onClose }: { partner: PartnerCard;
         event: 'INSERT',
         schema: 'public',
         table: 'messages',
-        filter: `match_id=eq.${partner.matchId}`,
       }, payload => {
-        setMessages(prev => [...prev, payload.new as Message]);
+        const msg = payload.new as Message;
+        if (msg.match_id === partner.matchId) {
+          setMessages(prev => [...prev, msg]);
+        }
       })
       .subscribe();
 
