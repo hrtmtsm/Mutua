@@ -264,6 +264,7 @@ export default function SessionPage() {
       schedulingState: 'pending_both',
       scheduledAt:     null,
       iAmA:            true,
+      avatarUrl:       null,
     });
     return true;
   }, []);
