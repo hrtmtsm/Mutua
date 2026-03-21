@@ -48,6 +48,45 @@ function useNavState() {
   return { pathname, initials, avatarBg, hasUnread };
 }
 
+function MessagesPanel() {
+  const threads = Object.entries(
+    typeof window !== 'undefined'
+      ? Object.fromEntries(
+          Object.keys(localStorage)
+            .filter(k => k.startsWith('mutua_messages_'))
+            .map(k => [k.replace('mutua_messages_', ''), JSON.parse(localStorage.getItem(k)!)])
+        )
+      : {}
+  ) as [string, { from: 'me' | 'them'; text: string; at: string }[]][];
+
+  if (threads.length === 0) {
+    return (
+      <div className="px-4 py-6 text-center">
+        <p className="text-sm font-semibold text-neutral-900 mb-1">No messages</p>
+        <p className="text-xs text-stone-400 leading-relaxed">
+          Messages from your exchange partners will appear here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-stone-100">
+      {threads.map(([partnerId, msgs]) => {
+        const last = msgs[msgs.length - 1];
+        return (
+          <div key={partnerId} className="px-4 py-3">
+            <p className="text-xs font-semibold text-neutral-900 mb-0.5">Partner</p>
+            <p className="text-xs text-stone-400 truncate">
+              {last?.from === 'me' ? 'You: ' : ''}{last?.text}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TopNav() {
   const { pathname, initials, avatarBg, hasUnread } = useNavState();
   const router = useRouter();
@@ -141,12 +180,7 @@ export default function TopNav() {
                   </p>
                 </div>
               ) : (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-sm font-semibold text-neutral-900 mb-1">No messages</p>
-                  <p className="text-xs text-stone-400 leading-relaxed">
-                    Messages from your exchange partners will appear here.
-                  </p>
-                </div>
+                <MessagesPanel />
               )}
             </div>
           )}
