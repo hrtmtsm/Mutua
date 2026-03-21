@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
+import { supabase, getMatchBySessionId, getMessages, sendMessage, type Match, type SchedulingState, type Message } from '@/lib/supabase';
 import { LANG_FLAGS, LANG_AVATAR_COLOR } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
@@ -66,28 +66,44 @@ function partnerFromMatch(m: Match, sessionId: string): PartnerCard {
 
 // ── Partner profile + message modal ──────────────────────────────────────────
 
-function PartnerModal({ partner, onClose }: { partner: PartnerCard; onClose: () => void }) {
+function PartnerModal({ partner, mySessionId, onClose }: { partner: PartnerCard; mySessionId: string; onClose: () => void }) {
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
-  const storageKey   = `mutua_messages_${partner.id}`;
 
-  const [messages, setMessages] = useState<{ from: 'me' | 'them'; text: string; at: string }[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const raw = localStorage.getItem(storageKey);
-    return raw ? JSON.parse(raw) : [];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const send = () => {
+  // Load messages + subscribe to realtime
+  useEffect(() => {
+    if (!partner.matchId) return;
+    getMessages(partner.matchId).then(setMessages);
+
+    const channel = supabase
+      .channel(`messages:${partner.matchId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `match_id=eq.${partner.matchId}`,
+      }, payload => {
+        setMessages(prev => [...prev, payload.new as Message]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [partner.matchId]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
-    const msg = { from: 'me' as const, text, at: new Date().toISOString() };
-    const next = [...messages, msg];
-    setMessages(next);
-    localStorage.setItem(storageKey, JSON.stringify(next));
-    // Mark unread for Messages tab badge
-    localStorage.setItem('mutua_unread_notification', 'message');
+    if (!text || !partner.matchId) return;
     setDraft('');
+    await sendMessage(partner.matchId, mySessionId, text);
   };
 
   return (
@@ -115,15 +131,19 @@ function PartnerModal({ partner, onClose }: { partner: PartnerCard; onClose: () 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
           {messages.length === 0 ? (
             <p className="text-xs text-stone-400 text-center mt-4">No messages yet. Say hello!</p>
-          ) : messages.map((m, i) => (
-            <div key={i} className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-              <span className={`px-3 py-2 rounded-2xl text-sm max-w-[75%] ${
-                m.from === 'me'
-                  ? 'bg-neutral-900 text-white rounded-br-sm'
-                  : 'bg-stone-100 text-neutral-500 rounded-bl-sm'
-              }`}>{m.text}</span>
-            </div>
-          ))}
+          ) : messages.map(m => {
+            const isMe = m.sender_id === mySessionId;
+            return (
+              <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <span className={`px-3 py-2 rounded-2xl text-sm max-w-[75%] ${
+                  isMe
+                    ? 'bg-neutral-900 text-white rounded-br-sm'
+                    : 'bg-stone-100 text-neutral-500 rounded-bl-sm'
+                }`}>{m.text}</span>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
 
         {/* Compose */}
@@ -517,8 +537,8 @@ export default function SessionPage() {
       </main>
 
       {/* Partner profile modal */}
-      {profileOpen && partner && (
-        <PartnerModal partner={partner} onClose={() => setProfileOpen(false)} />
+      {profileOpen && partner && sessionId && (
+        <PartnerModal partner={partner} mySessionId={sessionId} onClose={() => setProfileOpen(false)} />
       )}
 
       {/* Confirmation toast */}

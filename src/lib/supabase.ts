@@ -139,6 +139,45 @@ export interface ConfirmedSession {
   created_at?: string;
 }
 
+// ── Messages table ────────────────────────────────────────────────────────────
+// Run in Supabase SQL editor:
+//
+// CREATE TABLE messages (
+//   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+//   match_id    UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+//   sender_id   TEXT NOT NULL,
+//   text        TEXT NOT NULL,
+//   created_at  TIMESTAMPTZ DEFAULT NOW()
+// );
+// ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "open_read"   ON messages FOR SELECT USING (true);
+// CREATE POLICY "open_insert" ON messages FOR INSERT WITH CHECK (true);
+
+export interface Message {
+  id:         string;
+  match_id:   string;
+  sender_id:  string;
+  text:       string;
+  created_at: string;
+}
+
+export async function getMessages(matchId: string): Promise<Message[]> {
+  if (!isConfigured) return [];
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('match_id', matchId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as Message[];
+}
+
+export async function sendMessage(matchId: string, senderId: string, text: string): Promise<void> {
+  if (!isConfigured) return;
+  const { error } = await supabase.from('messages').insert({ match_id: matchId, sender_id: senderId, text });
+  if (error) throw error;
+}
+
 export async function getMatchBySessionId(sessionId: string): Promise<Match | null> {
   if (!isConfigured) return null;
   const { data, error } = await supabase

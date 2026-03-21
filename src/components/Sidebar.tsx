@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { User, ArrowLeftRight, TrendingUp, Bell } from 'lucide-react';
 import { LANG_AVATAR_COLOR } from '@/lib/constants';
+import { supabase, getMessages, type Message } from '@/lib/supabase';
 
 const BOTTOM_NAV = [
   {
@@ -49,17 +50,45 @@ function useNavState() {
 }
 
 function MessagesPanel() {
-  const threads = Object.entries(
-    typeof window !== 'undefined'
-      ? Object.fromEntries(
-          Object.keys(localStorage)
-            .filter(k => k.startsWith('mutua_messages_'))
-            .map(k => [k.replace('mutua_messages_', ''), JSON.parse(localStorage.getItem(k)!)])
-        )
-      : {}
-  ) as [string, { from: 'me' | 'them'; text: string; at: string }[]][];
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [matchId, setMatchId]   = useState<string | null>(null);
+  const [myId, setMyId]         = useState<string | null>(null);
+  const [partnerName, setPartnerName] = useState('Partner');
 
-  if (threads.length === 0) {
+  useEffect(() => {
+    const sessionId = localStorage.getItem('mutua_session_id');
+    if (!sessionId) return;
+    setMyId(sessionId);
+
+    async function load() {
+      const { data: match } = await supabase
+        .from('matches')
+        .select('id, name_a, name_b, session_id_a, session_id_b')
+        .or(`session_id_a.eq.${sessionId},session_id_b.eq.${sessionId}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!match) return;
+      setMatchId(match.id);
+      const isA = match.session_id_a === sessionId;
+      setPartnerName(isA ? (match.name_b ?? 'Partner') : (match.name_a ?? 'Partner'));
+      const msgs = await getMessages(match.id);
+      setMessages(msgs);
+
+      // realtime
+      supabase
+        .channel(`sidebar:messages:${match.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'messages',
+          filter: `match_id=eq.${match.id}`,
+        }, payload => setMessages(prev => [...prev, payload.new as Message]))
+        .subscribe();
+    }
+    load();
+  }, []);
+
+  if (messages.length === 0) {
     return (
       <div className="px-4 py-6 text-center">
         <p className="text-sm font-semibold text-neutral-900 mb-1">No messages</p>
@@ -70,19 +99,15 @@ function MessagesPanel() {
     );
   }
 
+  const last = messages[messages.length - 1];
   return (
     <div className="divide-y divide-stone-100">
-      {threads.map(([partnerId, msgs]) => {
-        const last = msgs[msgs.length - 1];
-        return (
-          <div key={partnerId} className="px-4 py-3">
-            <p className="text-xs font-semibold text-neutral-900 mb-0.5">Partner</p>
-            <p className="text-xs text-stone-400 truncate">
-              {last?.from === 'me' ? 'You: ' : ''}{last?.text}
-            </p>
-          </div>
-        );
-      })}
+      <div className="px-4 py-3">
+        <p className="text-xs font-semibold text-neutral-900 mb-0.5">{partnerName}</p>
+        <p className="text-xs text-stone-400 truncate">
+          {last.sender_id === myId ? 'You: ' : ''}{last.text}
+        </p>
+      </div>
     </div>
   );
 }
