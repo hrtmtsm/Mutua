@@ -426,7 +426,7 @@ export default function TopNav() {
               ) : inboxTab === 'notifications' ? (
                 <div className="px-4 py-4 space-y-2">
                   {scheduleState === 'scheduled' && (
-                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl">
+                    <div className="flex items-start gap-3 p-3 bg-white border border-stone-100 rounded-xl">
                       <span className="text-base mt-0.5">📅</span>
                       <div>
                         <p className="text-xs font-semibold text-neutral-900">Session scheduled</p>
@@ -435,7 +435,7 @@ export default function TopNav() {
                     </div>
                   )}
                   {scheduleState === 'computing' && (
-                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
+                    <div className="flex items-start gap-3 p-3 bg-white border border-stone-100 rounded-xl">
                       <span className="text-base mt-0.5">🔍</span>
                       <div>
                         <p className="text-xs font-semibold text-neutral-900">Finding a time</p>
@@ -444,11 +444,20 @@ export default function TopNav() {
                     </div>
                   )}
                   {scheduleState === 'no_overlap' && (
-                    <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl">
+                    <div className="flex items-start gap-3 p-3 bg-white border border-stone-100 rounded-xl">
                       <span className="text-base mt-0.5">⚠️</span>
                       <div>
                         <p className="text-xs font-semibold text-neutral-900">No overlapping times</p>
                         <p className="text-xs text-stone-500 mt-0.5">Update your availability so we can find a slot with {partnerName}.</p>
+                      </div>
+                    </div>
+                  )}
+                  {(scheduleState === 'pending_a' || scheduleState === 'pending_b' || scheduleState === 'pending_both') && (
+                    <div className="flex items-start gap-3 p-3 bg-white border border-stone-100 rounded-xl">
+                      <span className="text-base mt-0.5">🕐</span>
+                      <div>
+                        <p className="text-xs font-semibold text-neutral-900">Session rescheduled</p>
+                        <p className="text-xs text-stone-500 mt-0.5">Waiting on availability to find a new time with {partnerName}.</p>
                       </div>
                     </div>
                   )}
