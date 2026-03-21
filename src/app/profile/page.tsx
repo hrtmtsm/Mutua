@@ -15,34 +15,65 @@ import { Pencil, Camera, ChevronDown } from 'lucide-react';
 const CROP_SIZE = 260;
 
 function CropModal({ src, onConfirm, onCancel }: { src: string; onConfirm: (blob: Blob) => void; onCancel: () => void }) {
-  const imgRef   = useRef<HTMLImageElement>(null);
+  const imgRef    = useRef<HTMLImageElement>(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
   const [offset, setOffset]   = useState({ x: 0, y: 0 });
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
-  const dragRef = useRef<{ startX: number; startY: number; ox: number; oy: number } | null>(null);
-
-  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    const s   = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
-    const w   = img.naturalWidth * s;
-    const h   = img.naturalHeight * s;
-    setImgSize({ w, h });
-    setOffset({ x: (CROP_SIZE - w) / 2, y: (CROP_SIZE - h) / 2 });
-  };
+  const imgSizeRef = useRef({ w: 0, h: 0 });
+  const dragging  = useRef(false);
+  const lastPos   = useRef({ x: 0, y: 0 });
 
   const clamp = (ox: number, oy: number, w: number, h: number) => ({
     x: Math.min(0, Math.max(CROP_SIZE - w, ox)),
     y: Math.min(0, Math.max(CROP_SIZE - h, oy)),
   });
 
-  const startDrag = (cx: number, cy: number) => {
-    dragRef.current = { startX: cx, startY: cy, ox: offset.x, oy: offset.y };
+  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const s   = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
+    const w   = img.naturalWidth * s;
+    const h   = img.naturalHeight * s;
+    imgSizeRef.current = { w, h };
+    setImgSize({ w, h });
+    const start = clamp((CROP_SIZE - w) / 2, (CROP_SIZE - h) / 2, w, h);
+    offsetRef.current = start;
+    setOffset(start);
   };
-  const moveDrag = (cx: number, cy: number) => {
-    if (!dragRef.current) return;
-    const { startX, startY, ox, oy } = dragRef.current;
-    setOffset(clamp(ox + cx - startX, oy + cy - startY, imgSize.w, imgSize.h));
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragging.current) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+      const dx = clientX - lastPos.current.x;
+      const dy = clientY - lastPos.current.y;
+      lastPos.current = { x: clientX, y: clientY };
+      const next = clamp(
+        offsetRef.current.x + dx,
+        offsetRef.current.y + dy,
+        imgSizeRef.current.w,
+        imgSizeRef.current.h,
+      );
+      offsetRef.current = next;
+      setOffset({ ...next });
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, []);
+
+  const startDrag = (clientX: number, clientY: number) => {
+    dragging.current = true;
+    lastPos.current  = { x: clientX, y: clientY };
   };
-  const endDrag = () => { dragRef.current = null; };
 
   const handleConfirm = () => {
     const canvas = document.createElement('canvas');
@@ -50,7 +81,7 @@ function CropModal({ src, onConfirm, onCancel }: { src: string; onConfirm: (blob
     canvas.height = CROP_SIZE;
     const ctx = canvas.getContext('2d')!;
     const img = imgRef.current!;
-    ctx.drawImage(img, offset.x, offset.y, imgSize.w, imgSize.h);
+    ctx.drawImage(img, offsetRef.current.x, offsetRef.current.y, imgSizeRef.current.w, imgSizeRef.current.h);
     canvas.toBlob(blob => { if (blob) onConfirm(blob); }, 'image/jpeg', 0.92);
   };
 
@@ -65,14 +96,9 @@ function CropModal({ src, onConfirm, onCancel }: { src: string; onConfirm: (blob
         <div className="flex justify-center py-6">
           <div
             className="relative overflow-hidden rounded-full select-none"
-            style={{ width: CROP_SIZE, height: CROP_SIZE, cursor: 'grab' }}
+            style={{ width: CROP_SIZE, height: CROP_SIZE, cursor: 'grab', touchAction: 'none' }}
             onMouseDown={e => startDrag(e.clientX, e.clientY)}
-            onMouseMove={e => moveDrag(e.clientX, e.clientY)}
-            onMouseUp={endDrag}
-            onMouseLeave={endDrag}
             onTouchStart={e => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
-            onTouchMove={e => { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); }}
-            onTouchEnd={endDrag}
           >
             <img
               ref={imgRef}
@@ -80,7 +106,7 @@ function CropModal({ src, onConfirm, onCancel }: { src: string; onConfirm: (blob
               alt=""
               onLoad={onLoad}
               draggable={false}
-              style={{ position: 'absolute', left: offset.x, top: offset.y, width: imgSize.w, height: imgSize.h }}
+              style={{ position: 'absolute', left: offset.x, top: offset.y, width: imgSize.w, height: imgSize.h, pointerEvents: 'none', userSelect: 'none' }}
             />
           </div>
         </div>
