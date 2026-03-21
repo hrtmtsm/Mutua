@@ -106,17 +106,30 @@ function MessageChat({
   onBack: () => void;
 }) {
   const [draft, setDraft] = useState('');
+  const [error, setError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Focus input when chat opens
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
+
   const send = async () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || !myId) return;
     setDraft('');
-    await sendMessage(matchId, myId, text);
+    setError('');
+    try {
+      await sendMessage(matchId, myId, text);
+    } catch (e: any) {
+      setError('Failed to send. Try again.');
+      console.error('sendMessage error:', e);
+    }
   };
 
   const initials = partnerName.trim().slice(0, 2).toUpperCase();
@@ -153,9 +166,13 @@ function MessageChat({
         <div ref={bottomRef} />
       </div>
 
+      {/* Error */}
+      {error && <p className="px-4 pb-1 text-xs text-rose-500">{error}</p>}
+
       {/* Compose */}
       <div className="px-3 py-2.5 border-t border-stone-100 flex gap-2 items-center shrink-0">
         <input
+          ref={inputRef}
           type="text"
           value={draft}
           onChange={e => setDraft(e.target.value)}
@@ -202,12 +219,14 @@ export default function TopNav() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [inboxOpen]);
 
-  // Load match + messages when inbox opens
+  // Load match + messages when inbox opens, subscribe to realtime
   useEffect(() => {
     if (!inboxOpen) return;
     const sessionId = localStorage.getItem('mutua_session_id');
     if (!sessionId) return;
     setMyId(sessionId);
+
+    let channelRef: ReturnType<typeof supabase.channel> | null = null;
 
     async function load() {
       const { data: match } = await supabase
@@ -225,17 +244,17 @@ export default function TopNav() {
       const msgs = await getMessages(match.id);
       setMessages(msgs);
 
-      const channel = supabase
+      channelRef = supabase
         .channel(`inbox:${match.id}`)
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'messages',
           filter: `match_id=eq.${match.id}`,
         }, payload => setMessages(prev => [...prev, payload.new as Message]))
         .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
     }
     load();
+
+    return () => { if (channelRef) supabase.removeChannel(channelRef); };
   }, [inboxOpen]);
 
   return (
