@@ -22,10 +22,27 @@ interface PartnerSummary {
   scheduledFor?: string;
 }
 
+interface Stats {
+  streak:       number;
+  totalMinutes: number;
+  totalSessions: number;
+  partners:     number;
+  weekSessions: number;
+  weekGoal:     number;
+}
+
 function formatDuration(s: number) {
   const m = Math.floor(s / 60);
   if (m === 0) return `${s}s`;
   return `${m} min`;
+}
+
+function formatTotalTime(totalSeconds: number) {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m} min`;
+  return `${totalSeconds}s`;
 }
 
 function formatDate(iso: string) {
@@ -42,7 +59,6 @@ function groupByPartner(sessions: SessionEntry[]): PartnerSummary[] {
       const p = map.get(key)!;
       p.sessionCount++;
       p.totalDuration += s.duration;
-      // sessions are newest-first so first entry = last session
     } else {
       map.set(key, {
         partnerName:   s.partnerName,
@@ -58,84 +74,175 @@ function groupByPartner(sessions: SessionEntry[]): PartnerSummary[] {
   return Array.from(map.values());
 }
 
+function frequencyToGoal(freq: string): number {
+  if (freq.includes('twice') || freq.includes('2')) return 2;
+  if (freq.includes('three') || freq.includes('3') || freq.includes('daily')) return 3;
+  return 1;
+}
+
+function computeStats(sessions: SessionEntry[]): Stats {
+  const streakRaw = localStorage.getItem('mutua_streak');
+  const streak = streakRaw ? (JSON.parse(streakRaw).count ?? 0) : 0;
+
+  const totalSecs = sessions.reduce((acc, s) => acc + s.duration, 0);
+  const partners  = new Set(sessions.map(s => s.partnerId || s.partnerName)).size;
+
+  // Sessions this calendar week (Mon–Sun)
+  const now  = new Date();
+  const mon  = new Date(now);
+  mon.setHours(0, 0, 0, 0);
+  mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const weekSessions = sessions.filter(s => new Date(s.date) >= mon).length;
+
+  const profile = localStorage.getItem('mutua_profile');
+  const freq    = profile ? (JSON.parse(profile).practice_frequency ?? '') : '';
+  const weekGoal = frequencyToGoal(freq);
+
+  return {
+    streak,
+    totalMinutes: totalSecs,
+    totalSessions: sessions.length,
+    partners,
+    weekSessions,
+    weekGoal,
+  };
+}
+
+const GLASS = {
+  background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
+  backdropFilter: 'blur(5px)',
+  WebkitBackdropFilter: 'blur(5px)',
+  border: '2px solid #f8f8f8',
+  borderRadius: '30px',
+  boxShadow: 'inset 10px -9px 22px 4px #0000000d',
+} as React.CSSProperties;
+
+function StatCard({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center py-4 px-2" style={GLASS}>
+      <p className="font-black text-xl text-neutral-500 leading-none">{value}</p>
+      <p className="text-[10px] font-semibold text-stone-400 mt-1 text-center leading-tight">{label}</p>
+    </div>
+  );
+}
+
 export default function HistoryPage() {
   const router = useRouter();
-  const [partners, setPartners] = useState<PartnerSummary[]>([]);
+  const [partners, setPartners]     = useState<PartnerSummary[]>([]);
+  const [stats, setStats]           = useState<Stats | null>(null);
   const [modalPartner, setModalPartner] = useState<string | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem('mutua_history');
-    if (raw) setPartners(groupByPartner(JSON.parse(raw)));
+    const sessions: SessionEntry[] = raw ? JSON.parse(raw) : [];
+    setPartners(groupByPartner(sessions));
+    setStats(computeStats(sessions));
   }, []);
+
+  const weekPct = stats ? Math.min((stats.weekSessions / stats.weekGoal) * 100, 100) : 0;
 
   return (
     <AppShell>
-      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
-        <h1 className="font-serif font-black text-2xl text-neutral-500 mb-6">History</h1>
+      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-6">
+        <h1 className="font-serif font-black text-2xl text-neutral-500">Progress</h1>
 
-        {partners.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center mt-20">
-            No sessions yet. Start practicing to build your history.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {partners.map(p => (
-              <div
-                key={p.partnerId || p.partnerName}
-                className="px-5 py-4 space-y-3" style={{
-                  background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-                  backdropFilter: 'blur(5px)',
-                  WebkitBackdropFilter: 'blur(5px)',
-                  border: '2px solid #f8f8f8',
-                  borderRadius: '30px',
-                  boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-                }}
-              >
-                {/* Partner info */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-neutral-500 text-base">{p.partnerName}</p>
-                    {p.sessionCount > 1 ? (
-                      <p className="text-xs text-neutral-400 mt-0.5">
-                        Practiced together {p.sessionCount} times
-                      </p>
-                    ) : (
-                      <p className="text-xs text-neutral-400 mt-0.5">First session</p>
-                    )}
-                    <p className="text-xs text-neutral-400 mt-0.5">
-                      Last session: {formatDuration(p.lastDuration)} · {formatDate(p.lastDate)}
-                    </p>
-                  </div>
-
-                  {/* Initials avatar */}
-                  <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-black text-white">
-                      {p.partnerName.trim().slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Scheduled tag */}
-                {p.scheduledFor && (
-                  <p className="text-xs text-[#2B8FFF] bg-[#2B8FFF]/8 px-3 py-1 rounded-full inline-block">
-                    Scheduled: {p.scheduledFor}
-                  </p>
-                )}
-
-                {/* CTA — only show when not yet scheduled */}
-                {!p.scheduledFor && (
-                  <button
-                    onClick={() => setModalPartner(p.partnerName)}
-                    className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
-                  >
-                    Schedule next session
-                  </button>
-                )}
-              </div>
-            ))}
+        {/* ── Stats row ── */}
+        {stats && (
+          <div className="flex gap-3">
+            <StatCard value={`${stats.streak}`}  label={`Session${stats.streak === 1 ? '' : 's'} streak`} />
+            <StatCard value={formatTotalTime(stats.totalMinutes)} label="Total practice" />
+            <StatCard value={`${stats.totalSessions}`} label="Sessions" />
+            <StatCard value={`${stats.partners}`} label="Partners" />
           </div>
         )}
+
+        {/* ── Weekly goal ── */}
+        {stats && (
+          <div className="px-5 py-4 space-y-3" style={GLASS}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-neutral-500">This week</p>
+              <p className="text-xs font-semibold text-stone-400">
+                {stats.weekSessions} / {stats.weekGoal} session{stats.weekGoal === 1 ? '' : 's'}
+              </p>
+            </div>
+            <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${weekPct}%`,
+                  background: weekPct >= 100 ? '#22c55e' : '#2B8FFF',
+                }}
+              />
+            </div>
+            {weekPct >= 100 ? (
+              <p className="text-xs text-green-600 font-semibold">Goal reached this week!</p>
+            ) : (
+              <p className="text-xs text-stone-400">
+                {stats.weekGoal - stats.weekSessions} more session{stats.weekGoal - stats.weekSessions === 1 ? '' : 's'} to hit your goal
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── History ── */}
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">History</h2>
+
+          {partners.length === 0 ? (
+            <p className="text-sm text-neutral-400 text-center mt-10">
+              No sessions yet. Start practicing to build your history.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {partners.map(p => (
+                <div
+                  key={p.partnerId || p.partnerName}
+                  className="px-5 py-4 space-y-3"
+                  style={GLASS}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-neutral-500 text-base">{p.partnerName}</p>
+                      {p.sessionCount > 1 ? (
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          Practiced together {p.sessionCount} times
+                        </p>
+                      ) : (
+                        <p className="text-xs text-neutral-400 mt-0.5">First session</p>
+                      )}
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Last session: {formatDuration(p.lastDuration)} · {formatDate(p.lastDate)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-black text-white">
+                        {p.partnerName.trim().slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {p.scheduledFor && (
+                    <p className="text-xs text-[#2B8FFF] bg-[#2B8FFF]/8 px-3 py-1 rounded-full inline-block">
+                      Scheduled: {p.scheduledFor}
+                    </p>
+                  )}
+
+                  {!p.scheduledFor && (
+                    <button
+                      onClick={() => setModalPartner(p.partnerName)}
+                      className="w-full py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
+                    >
+                      Schedule next session
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </main>
+
       {/* Schedule modal */}
       {modalPartner && (
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 px-4 pb-6 sm:pb-0">
@@ -161,7 +268,6 @@ export default function HistoryPage() {
           </div>
         </div>
       )}
-
     </AppShell>
   );
 }
