@@ -513,7 +513,7 @@ export default function SessionPage() {
     <AppShell>
       <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-8">
 
-        <h1 className="font-serif font-black text-2xl text-neutral-500">Session</h1>
+        <h1 className="font-serif font-bold text-2xl text-[#171717]">Session</h1>
 
         {loading ? (
           <p className="text-sm text-stone-400">Loading...</p>

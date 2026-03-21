@@ -135,7 +135,7 @@ export default function HistoryPage() {
   return (
     <AppShell>
       <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-6">
-        <h1 className="font-serif font-black text-2xl text-neutral-500">Progress</h1>
+        <h1 className="font-serif font-bold text-2xl text-[#171717]">Progress</h1>
 
         {/* ── Stats row ── */}
         {stats && (
@@ -177,7 +177,7 @@ export default function HistoryPage() {
 
         {/* ── History ── */}
         <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">History</h2>
+          <h2 className="text-xs font-semibold text-stone-400 mb-3">History</h2>
 
           {partners.length === 0 ? (
             <p className="text-sm text-neutral-400 text-center mt-10">

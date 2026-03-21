@@ -141,7 +141,7 @@ export default function ProfilePage() {
     <AppShell>
       <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full space-y-5">
 
-        <h1 className="font-serif font-black text-2xl text-neutral-500">Profile</h1>
+        <h1 className="font-serif font-bold text-2xl text-[#171717]">Profile</h1>
 
         {profile ? (
           <>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
             <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
 
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Your identity</p>
+                <p className="text-xs font-semibold text-stone-400">Your identity</p>
                 {!editingIdentity ? (
                   <button onClick={() => { setDraftName(name); setEditingIdentity(true); }} title="Edit" className="text-stone-300 hover:text-neutral-900 transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1.5">Name</p>
+                  <p className="text-xs font-semibold text-stone-400 mb-1.5">Name</p>
                   {editingIdentity ? (
                     <input
                       type="text"
@@ -213,7 +213,7 @@ export default function ProfilePage() {
             <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
 
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Your preferences</p>
+                <p className="text-xs font-semibold text-stone-400">Your preferences</p>
                 {!editing ? (
                   <button onClick={() => setEditing(true)} title="Edit" className="text-stone-300 hover:text-neutral-900 transition-colors">
                     <Pencil className="w-3.5 h-3.5" />
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                   { label: 'Interests',        value: interests || '—',  editor: <input type="text" value={interests} onChange={e => setInterests(e.target.value)} placeholder="e.g. music, travel, cooking" className="text-sm font-semibold text-neutral-900 border border-stone-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-neutral-900 bg-stone-50 w-48" /> },
                 ].map(({ label, value, editor }) => (
                   <div key={label} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
-                    <span className="text-xs font-bold uppercase tracking-widest text-stone-400">{label}</span>
+                    <span className="text-xs font-semibold text-stone-400">{label}</span>
                     {editing ? editor : <span className="text-sm font-semibold text-neutral-500">{value}</span>}
                   </div>
                 ))}
@@ -251,7 +251,7 @@ export default function ProfilePage() {
             <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Weekly availability</p>
+                  <p className="text-xs font-semibold text-stone-400">Weekly availability</p>
                   {availSlots.length > 0 && !editingAvail && (
                     <p className="text-xs text-stone-400 mt-0.5">{availSlots.length} slot{availSlots.length === 1 ? '' : 's'} saved</p>
                   )}
