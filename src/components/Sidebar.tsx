@@ -233,10 +233,50 @@ export default function TopNav() {
   const inboxRef = useRef<HTMLDivElement>(null);
 
   // Shared message state loaded once when inbox opens
-  const [matchId, setMatchId]         = useState<string | null>(null);
-  const [partnerName, setPartnerName] = useState('Partner');
-  const [myId, setMyId]               = useState('');
-  const [messages, setMessages]       = useState<Message[]>([]);
+  const [matchId, setMatchId]               = useState<string | null>(null);
+  const [partnerName, setPartnerName]       = useState('Partner');
+  const [myId, setMyId]                     = useState('');
+  const [messages, setMessages]             = useState<Message[]>([]);
+  const [scheduleState, setScheduleState]   = useState<string | null>(null);
+
+  // Watch for scheduling updates and set unread dot
+  useEffect(() => {
+    const sessionId = localStorage.getItem('mutua_session_id');
+    if (!sessionId) return;
+
+    let prevState: string | null = null;
+
+    async function init() {
+      const { data: match } = await supabase
+        .from('matches')
+        .select('id, scheduling_state')
+        .or(`session_id_a.eq.${sessionId},session_id_b.eq.${sessionId}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!match) return;
+      prevState = match.scheduling_state;
+
+      const channel = supabase
+        .channel(`nav-schedule:${match.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'matches', filter: `id=eq.${match.id}`,
+        }, payload => {
+          const next = (payload.new as any).scheduling_state;
+          if (next && next !== prevState) {
+            prevState = next;
+            localStorage.setItem('mutua_unread_notification', '1');
+            setHasUnread(true);
+          }
+        })
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+    }
+
+    const cleanup = init();
+    return () => { cleanup.then(fn => fn?.()); };
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -274,6 +314,13 @@ export default function TopNav() {
       setPartnerName(isA ? (match.name_b ?? 'Partner') : (match.name_a ?? 'Partner'));
       const msgs = await getMessages(match.id);
       setMessages(msgs);
+
+      const { data: full } = await supabase
+        .from('matches')
+        .select('scheduling_state, scheduled_at')
+        .eq('id', match.id)
+        .maybeSingle();
+      if (full) setScheduleState(full.scheduling_state ?? null);
 
       channelRef = supabase
         .channel(`inbox:${match.id}`)
@@ -377,11 +424,40 @@ export default function TopNav() {
                   onBack={() => setMsgView('list')}
                 />
               ) : inboxTab === 'notifications' ? (
-                <div className="px-4 py-6 text-center">
-                  <p className="text-sm font-semibold text-neutral-900 mb-1">No notifications</p>
-                  <p className="text-xs text-stone-400 leading-relaxed">
-                    We'll let you know when your session is confirmed or your partner reaches out.
-                  </p>
+                <div className="px-4 py-4 space-y-2">
+                  {scheduleState === 'scheduled' && (
+                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl">
+                      <span className="text-base mt-0.5">📅</span>
+                      <div>
+                        <p className="text-xs font-semibold text-neutral-900">Session scheduled</p>
+                        <p className="text-xs text-stone-500 mt-0.5">Your first session with {partnerName} has been confirmed.</p>
+                      </div>
+                    </div>
+                  )}
+                  {scheduleState === 'computing' && (
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
+                      <span className="text-base mt-0.5">🔍</span>
+                      <div>
+                        <p className="text-xs font-semibold text-neutral-900">Finding a time</p>
+                        <p className="text-xs text-stone-500 mt-0.5">We're matching your availability with {partnerName}.</p>
+                      </div>
+                    </div>
+                  )}
+                  {scheduleState === 'no_overlap' && (
+                    <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl">
+                      <span className="text-base mt-0.5">⚠️</span>
+                      <div>
+                        <p className="text-xs font-semibold text-neutral-900">No overlapping times</p>
+                        <p className="text-xs text-stone-500 mt-0.5">Update your availability so we can find a slot with {partnerName}.</p>
+                      </div>
+                    </div>
+                  )}
+                  {!scheduleState && (
+                    <div className="py-4 text-center">
+                      <p className="text-sm font-semibold text-neutral-900 mb-1">No notifications</p>
+                      <p className="text-xs text-stone-400 leading-relaxed">We'll let you know when your session is confirmed.</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <MessagesList
