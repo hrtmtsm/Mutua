@@ -52,6 +52,7 @@ export default function TopNav() {
   const { pathname, initials, avatarBg, hasUnread } = useNavState();
   const router = useRouter();
   const [inboxOpen, setInboxOpen] = useState(false);
+  const [inboxTab, setInboxTab] = useState<'notifications' | 'messages'>('notifications');
   const inboxRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -112,18 +113,41 @@ export default function TopNav() {
             )}
           </button>
 
-          {/* Notifications dropdown */}
+          {/* Notifications / Messages dropdown */}
           {inboxOpen && (
             <div className="absolute top-14 right-4 w-80 bg-white border border-stone-200 rounded-2xl shadow-xl overflow-hidden z-30">
-              <div className="px-4 py-3 border-b border-stone-100">
-                <p className="text-sm font-semibold text-neutral-900">Notifications</p>
+              {/* Tabs */}
+              <div className="flex border-b border-stone-100">
+                {(['notifications', 'messages'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setInboxTab(tab)}
+                    className={`flex-1 py-3 text-xs font-semibold capitalize transition-colors ${
+                      inboxTab === tab
+                        ? 'text-neutral-900 border-b-2 border-neutral-900'
+                        : 'text-stone-400 hover:text-neutral-700'
+                    }`}
+                  >
+                    {tab === 'notifications' ? 'Notifications' : 'Messages'}
+                  </button>
+                ))}
               </div>
-              <div className="px-4 py-6 text-center">
-                <p className="text-sm font-semibold text-neutral-900 mb-1">No notifications</p>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  We'll let you know when your session is confirmed or your partner reaches out.
-                </p>
-              </div>
+
+              {inboxTab === 'notifications' ? (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-sm font-semibold text-neutral-900 mb-1">No notifications</p>
+                  <p className="text-xs text-stone-400 leading-relaxed">
+                    We'll let you know when your session is confirmed or your partner reaches out.
+                  </p>
+                </div>
+              ) : (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-sm font-semibold text-neutral-900 mb-1">No messages</p>
+                  <p className="text-xs text-stone-400 leading-relaxed">
+                    Messages from your exchange partners will appear here.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
