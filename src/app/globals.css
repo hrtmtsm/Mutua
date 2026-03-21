@@ -1,6 +1,4 @@
 
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,14 +21,6 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: #d4d4d4;
   border-radius: 4px;
-}
-
-:root {
-  --font-heading: 'Satoshi', sans-serif;
-}
-
-.font-serif {
-  font-family: 'Satoshi', sans-serif !important;
 }
 
 @keyframes speak-pulse {
