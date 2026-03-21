@@ -242,7 +242,7 @@ function SchedulingCard({
 
       {/* Learning */}
       <div className="px-6 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">Learning</p>
+        <p className="text-xs font-semibold text-stone-400 mb-2">Learning</p>
         <div className="flex flex-wrap gap-1.5">
           <span className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
             {learningFlag} {partner.learningLang}
@@ -252,7 +252,7 @@ function SchedulingCard({
 
       {/* In common */}
       <div className="px-6 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">In common</p>
+        <p className="text-xs font-semibold text-stone-400 mb-2">In common</p>
         <div className="flex flex-wrap gap-1.5">
           {[partner.goal, partner.commStyle, partner.frequency].filter(Boolean).map((v, i) => (
             <span key={i} className="px-2.5 py-1 bg-stone-100 border border-stone-200 text-xs font-medium text-stone-600 rounded-full">
