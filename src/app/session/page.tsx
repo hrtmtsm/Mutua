@@ -763,7 +763,7 @@ export default function SessionPage() {
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
 
         {/* ── Participant area: 50/50 split ── */}
-        <div className={`relative flex flex-col md:flex-row ${chatOpen ? 'h-[55%] flex-none md:h-auto md:flex-1' : 'flex-1'}`}>
+        <div className={`relative flex flex-col md:flex-row ${chatOpen ? 'h-[38%] flex-none md:h-auto md:flex-1' : 'flex-1'}`}>
 
           {/* Partner pane */}
           <div className="relative flex-1 overflow-hidden">
