@@ -21,13 +21,21 @@ interface PartnerCard {
   schedulingState:  SchedulingState;
   scheduledAt:      string | null;   // UTC ISO string when scheduled
   iAmA:             boolean;         // true = I am session_id_a
+  avatarUrl:        string | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Avatar({ name, lang, size = 'md' }: { name: string; lang: string; size?: 'sm' | 'md' | 'lg' }) {
+function Avatar({ name, lang, avatarUrl, size = 'md' }: { name: string; lang: string; avatarUrl?: string | null; size?: 'sm' | 'md' | 'lg' }) {
   const bg  = LANG_AVATAR_COLOR[lang] ?? '#3b82f6';
   const cls = size === 'lg' ? 'w-16 h-16 text-xl' : size === 'sm' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base';
+  if (avatarUrl) {
+    return (
+      <div className={`${cls} rounded-2xl overflow-hidden shrink-0`}>
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
     <div
       style={{ backgroundColor: bg }}
@@ -61,6 +69,7 @@ function partnerFromMatch(m: Match, sessionId: string): PartnerCard {
     schedulingState: state,
     scheduledAt:     m.scheduled_at ?? null,
     iAmA:            isA,
+    avatarUrl:       null,
   };
 }
 
@@ -108,7 +117,7 @@ function SchedulingCard({
         style={{ backgroundColor: avatarBg + '18' }}
       >
         <div className="px-6 pt-6 pb-5 flex items-end gap-4">
-          <Avatar name={partner.name} lang={partner.nativeLang} size="lg" />
+          <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
           <div className="flex-1 min-w-0 pb-0.5">
             <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
             <p className="text-sm text-stone-500 mt-0.5">
@@ -207,12 +216,13 @@ export default function SessionPage() {
 
       const { data: partnerProfile } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, avatar_url')
         .eq('session_id', partnerSessionId)
         .maybeSingle();
 
       const card = partnerFromMatch(m, sid);
       if (partnerProfile?.name) card.name = partnerProfile.name;
+      if (partnerProfile?.avatar_url) card.avatarUrl = partnerProfile.avatar_url;
 
       setPartner(card);
       setMatchId(m.id);
