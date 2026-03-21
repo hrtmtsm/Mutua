@@ -70,7 +70,7 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
-      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full bg-[#f4f4f4]">
+      <main className="flex-1 px-6 py-10 max-w-2xl mx-auto w-full">
         <h1 className="font-serif font-black text-2xl text-neutral-900 mb-6">History</h1>
 
         {partners.length === 0 ? (
