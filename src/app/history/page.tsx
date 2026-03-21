@@ -108,18 +108,9 @@ function computeStats(sessions: SessionEntry[]): Stats {
   };
 }
 
-const GLASS = {
-  background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-  backdropFilter: 'blur(5px)',
-  WebkitBackdropFilter: 'blur(5px)',
-  border: '2px solid #f8f8f8',
-  borderRadius: '30px',
-  boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-} as React.CSSProperties;
-
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center py-4 px-2" style={GLASS}>
+    <div className="flex-1 flex flex-col items-center justify-center py-4 px-2 bg-stone-50 rounded-2xl">
       <p className="font-black text-xl text-neutral-500 leading-none">{value}</p>
       <p className="text-[10px] font-semibold text-stone-400 mt-1 text-center leading-tight">{label}</p>
     </div>
@@ -158,7 +149,7 @@ export default function HistoryPage() {
 
         {/* ── Weekly goal ── */}
         {stats && (
-          <div className="px-5 py-4 space-y-3" style={GLASS}>
+          <div className="px-5 py-4 space-y-3 bg-stone-50 rounded-2xl">
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-neutral-500">This week</p>
               <p className="text-xs font-semibold text-stone-400">
@@ -197,8 +188,7 @@ export default function HistoryPage() {
               {partners.map(p => (
                 <div
                   key={p.partnerId || p.partnerName}
-                  className="px-5 py-4 space-y-3"
-                  style={GLASS}
+                  className="px-5 py-4 space-y-3 bg-stone-50 rounded-2xl"
                 >
                   <div className="flex items-start justify-between">
                     <div>

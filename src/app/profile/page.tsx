@@ -149,14 +149,7 @@ export default function ProfilePage() {
         {profile ? (
           <>
             {/* ── Identity card ── */}
-            <div className="p-6 space-y-4" style={{
-              background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-              border: '2px solid #f8f8f8',
-              borderRadius: '30px',
-              boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-            }}>
+            <div className="p-6 space-y-4 bg-stone-50 rounded-2xl">
 
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Your identity</p>
@@ -178,60 +171,7 @@ export default function ProfilePage() {
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
                     ) : (
-                      <div style={{ backgroundColor: avatarBg }} className="w-full h-full flex items-center justify-center font-black text-white text-xl">
-                        {initials}
-                      </div>
-                    )}
-                    {editingIdentity && (
-                      <div className="absolute inset-0 rounded-2xl bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="w-4 h-4" />
-                      </div>
-                    )}
-                  </div>
-                  {uploading && (
-                    <div className="absolute inset-0 rounded-2xl bg-white/70 flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-[#2B8FFF] border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-                </div>
-
-                {/* Name */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1.5">Name</p>
-                  {editingIdentity ? (
-                    <input
-                      type="text"
-                      value={draftName}
-                      onChange={e => setDraftName(e.target.value)}
-                      autoFocus
-                      placeholder="Your name"
-                      className="w-full text-base font-bold text-neutral-900 border border-stone-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#2B8FFF] transition-colors"
-                    />
-                  ) : (
-                    <p className="text-base font-bold text-neutral-500">{name || '—'}</p>
-                  )}
-                </div>
-
-              </div>
-
-              {editingIdentity && (
-                <button onClick={handleSaveIdentity} disabled={saving} className="w-full py-2.5 btn-primary text-white font-bold text-sm rounded-full shadow-md disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save changes'}
-                </button>
-              )}
-
-            </div>
-
-            {/* ── Preferences card ── */}
-            <div className="p-6 space-y-4" style={{
-              background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-              border: '2px solid #f8f8f8',
-              borderRadius: '30px',
-              boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-            }}>
+                      <div>
 
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Your preferences</p>
@@ -267,14 +207,7 @@ export default function ProfilePage() {
 
             </div>
             {/* ── Availability card ── */}
-            <div className="p-6 space-y-4" style={{
-              background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-              border: '2px solid #f8f8f8',
-              borderRadius: '30px',
-              boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-            }}>
+            <div className="p-6 space-y-4 bg-stone-50 rounded-2xl">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-stone-400">Weekly availability</p>
@@ -325,14 +258,7 @@ export default function ProfilePage() {
 
           </>
         ) : (
-          <div className="px-8 py-12 text-center space-y-3" style={{
-            background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)',
-            border: '2px solid #f8f8f8',
-            borderRadius: '30px',
-            boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-          }}>
+          <div className="px-8 py-12 text-center space-y-3 bg-stone-50 rounded-2xl">
             <p className="font-serif font-black text-xl text-neutral-900">No profile yet</p>
             <p className="text-sm text-stone-500">Complete onboarding to set up your profile.</p>
             <button onClick={() => router.push('/onboarding')} className="mt-2 inline-block px-6 py-2.5 btn-primary text-white font-bold text-sm rounded-full shadow-md">

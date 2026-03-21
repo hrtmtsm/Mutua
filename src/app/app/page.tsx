@@ -205,14 +205,7 @@ function SchedulingCard({
     (s === 'pending_b' && partner.iAmA);
 
   return (
-    <div className="overflow-hidden" style={{
-      background: 'linear-gradient(#ffffff4d 0%, #f8f8f899 100%)',
-      backdropFilter: 'blur(5px)',
-      WebkitBackdropFilter: 'blur(5px)',
-      border: '2px solid #f8f8f8',
-      borderRadius: '30px',
-      boxShadow: 'inset 10px -9px 22px 4px #0000000d',
-    }}>
+    <div className="overflow-hidden bg-stone-50 rounded-3xl">
 
       {/* Header */}
       <div className="px-6 pt-5 pb-4 flex items-center gap-4">
