@@ -119,9 +119,11 @@ function SchedulingCard({
           <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
           <div className="flex-1 min-w-0 pt-0.5">
             <p className="font-serif font-bold text-[#171717] text-2xl leading-tight">{partner.name}</p>
-            <p className="text-sm text-stone-400 mt-1.5">
-              {nativeFlag} {partner.nativeLang} · learning {learningFlag} {partner.learningLang}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1.5 text-sm">
+              <span className="text-stone-500">{nativeFlag} {partner.nativeLang}</span>
+              <span className="text-stone-300">→</span>
+              <span className="text-[#2B8FFF] font-medium">{learningFlag} {partner.learningLang}</span>
+            </div>
           </div>
           <div className="shrink-0">
             {s === 'scheduled' && (
