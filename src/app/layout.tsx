@@ -1,18 +1,14 @@
 import type { Metadata } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { Sora } from 'next/font/google';
 import './globals.css';
 import 'flag-icons/css/flag-icons.min.css';
 import PostHogProvider from '@/components/PostHogProvider';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-geist',
-});
-
-const outfit = Outfit({
+const sora = Sora({
   subsets: ['latin'],
   variable: '--font-heading',
-  weight: ['500', '600', '700', '800'],
+  weight: ['400', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${sora.variable}`}>
       <body className="font-sans text-neutral-900 antialiased overflow-x-hidden bg-white">
         <PostHogProvider>{children}</PostHogProvider>
       </body>

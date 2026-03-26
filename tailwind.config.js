@@ -9,7 +9,7 @@ module.exports = {
     extend: {
       fontFamily: {
         serif: ['var(--font-heading)', 'system-ui', 'sans-serif'],
-        sans:  ['var(--font-geist)', 'system-ui', 'sans-serif'],
+        sans:  ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         float: {
