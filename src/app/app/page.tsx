@@ -78,29 +78,37 @@ function partnerFromMatch(m: Match, sessionId: string): PartnerCard {
   };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function isJoinable(scheduledAt: string, now: number): boolean {
+  const t = new Date(scheduledAt).getTime();
+  return (t - now) <= 30 * 60 * 1000 && (now - t) <= 60 * 60 * 1000;
+}
+
 // ── Scheduling partner card ───────────────────────────────────────────────────
 
 function SchedulingCard({
   partner,
-  onConfirm,
   onReschedule,
   onJoin,
   onBookExchange,
   onViewProfile,
-  hasConfirmed,
 }: {
   partner:         PartnerCard;
-  onConfirm:       (matchId: string, scheduledAt: string) => void;
   onReschedule:    () => void;
   onJoin:          () => void;
   onBookExchange:  () => void;
   onViewProfile:   () => void;
-  hasConfirmed:    boolean;
 }) {
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
 
   const [showPicker, setShowPicker] = useState(false);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Determine my pending state
   const s = partner.schedulingState;
@@ -200,17 +208,14 @@ function SchedulingCard({
             <p className="text-xs font-medium text-stone-400">First session</p>
             <p className="font-semibold text-neutral-800 text-sm mt-1">{fmtScheduledAt(partner.scheduledAt)}</p>
           </div>
-          {hasConfirmed ? (
-            <span className="text-sm font-medium text-green-600">You're confirmed ✓</span>
+          {isJoinable(partner.scheduledAt, now) ? (
+            <button onClick={onJoin} className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl">
+              Join session →
+            </button>
           ) : (
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={onReschedule} className="px-4 py-2.5 border border-stone-200 bg-white text-sm text-neutral-500 font-medium rounded-xl hover:bg-stone-50 transition-colors">
-                Reschedule
-              </button>
-              <button onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)} className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl">
-                I'm in →
-              </button>
-            </div>
+            <button onClick={onReschedule} className="px-4 py-2.5 border border-stone-200 bg-white text-sm text-neutral-500 font-medium rounded-xl hover:bg-stone-50 transition-colors">
+              Reschedule
+            </button>
           )}
         </div>
       )}
@@ -227,8 +232,6 @@ export default function SessionPage() {
   const [loading,   setLoading]   = useState(true);
   const [matchId,   setMatchId]   = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [confirmed,    setConfirmed]    = useState<{ name: string; time: string } | null>(null);
-  const [hasConfirmed, setHasConfirmed] = useState(false);
 
   const loadMatch = useCallback(async (sid: string) => {
     try {
@@ -270,7 +273,17 @@ export default function SessionPage() {
 
       setPartner(card);
       setMatchId(m.id);
-      setHasConfirmed(!!localStorage.getItem(`mutua_confirmed_${m.id}`));
+
+      // Auto-fire confirm notification once per user per match
+      if (card.schedulingState === 'scheduled' && !localStorage.getItem(`mutua_autoconfirmed_${m.id}`)) {
+        localStorage.setItem(`mutua_autoconfirmed_${m.id}`, '1');
+        const myName = (() => { try { return JSON.parse(localStorage.getItem('mutua_profile') ?? '{}').name ?? ''; } catch { return ''; } })();
+        fetch('/api/confirm-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ matchId: m.id, partnerEmail: '', scheduledTime: card.scheduledAt ? new Date(card.scheduledAt).toLocaleString() : '', confirmerName: myName }),
+        }).catch(() => {});
+      }
       if (card.schedulingState === 'scheduled' && card.scheduledAt) {
         localStorage.setItem('mutua_last_notification', JSON.stringify({
           type: 'session_scheduled',
@@ -391,30 +404,6 @@ export default function SessionPage() {
     if (sessionId) loadMatch(sessionId);
   };
 
-  const handleConfirm = async (mId: string, scheduledAt: string) => {
-    const p = partner;
-    if (!p) return;
-
-    // Update DB status to confirmed
-    await fetch('/api/confirm-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        matchId:       mId,
-        partnerEmail:  '', // email handled by DB — confirm-session still fires notification
-        scheduledTime: fmtScheduledAt(scheduledAt),
-        confirmerName: localStorage.getItem('mutua_profile')
-          ? JSON.parse(localStorage.getItem('mutua_profile')!).name ?? ''
-          : '',
-      }),
-    }).catch(() => {});
-
-    track('session_confirmed', { partner_name: p.name, scheduled_at: scheduledAt });
-    localStorage.setItem(`mutua_confirmed_${mId}`, '1');
-    setHasConfirmed(true);
-    setConfirmed({ name: p.name, time: fmtScheduledAt(scheduledAt) });
-    setPartner(prev => prev ? { ...prev, schedulingState: 'scheduled' } : prev);
-  };
 
   const handleReschedule = () => {
     if (partner) localStorage.setItem('mutua_scheduling_partner', partner.name);
@@ -437,7 +426,7 @@ export default function SessionPage() {
           <h1 className="font-serif font-semibold text-2xl text-[#171717]">Your exchange</h1>
           <p className="text-sm text-stone-400 mt-1">
             {loading ? '' : partner
-              ? 'You have an active language partner. Confirm your first session to get started.'
+              ? 'You have an active language partner.'
               : 'No partner yet — we\'ll reach out when we find your match.'}
           </p>
         </div>
@@ -447,12 +436,10 @@ export default function SessionPage() {
         ) : partner ? (
           <SchedulingCard
             partner={partner}
-            onConfirm={handleConfirm}
             onReschedule={handleReschedule}
             onJoin={handleJoin}
             onBookExchange={handleBookExchange}
             onViewProfile={() => router.push(`/partner/${partner.matchId}`)}
-            hasConfirmed={hasConfirmed}
           />
         ) : (
           <div className="bg-white/60 border border-stone-200 border-dashed rounded-2xl px-6 py-10 text-center">
@@ -462,33 +449,6 @@ export default function SessionPage() {
 
       </main>
 
-      {/* Confirmation toast */}
-      {confirmed && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center space-y-5 shadow-xl">
-            <div className="flex justify-center">
-              <div className="w-12 h-12 rounded-full bg-green-50 border border-green-200 flex items-center justify-center">
-                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="font-bold text-neutral-500 text-lg">Session confirmed</p>
-              <p className="text-sm text-stone-500">
-                Your first session with <span className="font-semibold text-neutral-500">{confirmed.name}</span>
-              </p>
-              <p className="font-bold text-[#2B8FFF] text-base">{confirmed.time}</p>
-            </div>
-            <button
-              onClick={() => setConfirmed(null)}
-              className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
 
     </AppShell>
   );
