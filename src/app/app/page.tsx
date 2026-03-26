@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
-import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES } from '@/lib/constants';
+import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES, INTEREST_MIGRATION } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -229,23 +229,22 @@ export default function SessionPage() {
         .from('profiles').select('name, avatar_url, interests, bio').eq('session_id', partnerSessionId).maybeSingle();
 
       const allTags = INTEREST_CATEGORIES.flatMap(c => c.tags);
-      const normalizeTags = (s?: string | null) => s
-        ? [...new Set(s.split(',').map(t => t.trim()).filter(Boolean)
-            .map(t => allTags.find(tag => tag.toLowerCase() === t.toLowerCase()) ?? null)
-            .filter(Boolean) as string[])]
-        : [];
+      const normalizeTags = (s?: string | null): string[] => {
+        if (!s) return [];
+        return [...new Set(
+          s.split(',').map(t => t.trim()).filter(Boolean).map(t => {
+            const exact = allTags.find(tag => tag.toLowerCase() === t.toLowerCase());
+            if (exact) return exact;
+            const migrationKey = Object.keys(INTEREST_MIGRATION).find(k => k.toLowerCase() === t.toLowerCase());
+            return migrationKey ? INTEREST_MIGRATION[migrationKey] : null;
+          }).filter(Boolean) as string[]
+        )];
+      };
       const myStoredProfile = localStorage.getItem('mutua_profile');
       const myRaw = myStoredProfile ? JSON.parse(myStoredProfile).interests : null;
       const myInterests = normalizeTags(myRaw);
       const partnerInterests = normalizeTags(partnerProfile?.interests);
       const sharedInterests = myInterests.filter(t => partnerInterests.includes(t));
-      console.log('[shared interests debug]', {
-        myRaw,
-        partnerRaw: partnerProfile?.interests,
-        myInterests,
-        partnerInterests,
-        sharedInterests,
-      });
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const storageAvatarUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${partnerSessionId}.jpg`;

@@ -28,14 +28,41 @@ export const FREQUENCY_DETAILS: Record<string, string> = {
 };
 
 export const INTEREST_CATEGORIES: { label: string; tags: string[] }[] = [
-  { label: 'Music & Arts',      tags: ['Music', 'Guitar', 'Piano', 'Singing', 'Drawing', 'Photography', 'Dance'] },
-  { label: 'Sports & Fitness',  tags: ['Soccer', 'Basketball', 'Tennis', 'Running', 'Gym', 'Yoga', 'Swimming', 'Hiking', 'Cycling'] },
-  { label: 'Gaming & Anime',    tags: ['Video games', 'Anime', 'Manga', 'Board games', 'Esports'] },
-  { label: 'Food & Drink',      tags: ['Cooking', 'Baking', 'Coffee', 'Tea', 'Street food'] },
-  { label: 'Film & TV',         tags: ['Movies', 'TV shows', 'K-drama', 'Documentaries', 'Podcasts'] },
-  { label: 'Travel & Culture',  tags: ['Travel', 'History', 'Culture exchange', 'Languages'] },
-  { label: 'Reading & Learning',tags: ['Books', 'Science', 'Writing', 'Philosophy'] },
+  { label: 'Music & Arts',      tags: ['Music', 'Live music', 'Singing', 'Photography', 'Art & design'] },
+  { label: 'Sports & Fitness',  tags: ['Sports', 'Gym & fitness', 'Running', 'Hiking', 'Yoga'] },
+  { label: 'Gaming & Anime',    tags: ['Gaming', 'Anime & manga', 'Board games', 'Esports'] },
+  { label: 'Food & Drink',      tags: ['Cooking', 'Baking', 'Cafés', 'Trying new food', 'Drinks'] },
+  { label: 'Film & Media',      tags: ['Movies & TV', 'Documentaries', 'Podcasts'] },
+  { label: 'Travel & Culture',  tags: ['Travel', 'Solo travel', 'Culture', 'Languages'] },
+  { label: 'Reading & Learning',tags: ['Reading', 'Tech', 'Psychology', 'Writing', 'Philosophy'] },
 ];
+
+// Migration map: old persisted tag → new canonical tag
+export const INTEREST_MIGRATION: Record<string, string> = {
+  'Guitar':           'Music',
+  'Piano':            'Music',
+  'Drawing':          'Art & design',
+  'Dance':            'Music',
+  'Soccer':           'Sports',
+  'Basketball':       'Sports',
+  'Tennis':           'Sports',
+  'Swimming':         'Sports',
+  'Cycling':          'Sports',
+  'Gym':              'Gym & fitness',
+  'Video games':      'Gaming',
+  'Anime':            'Anime & manga',
+  'Manga':            'Anime & manga',
+  'Coffee':           'Cafés',
+  'Tea':              'Cafés',
+  'Street food':      'Trying new food',
+  'Movies':           'Movies & TV',
+  'TV shows':         'Movies & TV',
+  'K-drama':          'Movies & TV',
+  'History':          'Culture',
+  'Culture exchange': 'Culture',
+  'Books':            'Reading',
+  'Science':          'Tech',
+};
 
 export const LANG_FLAGS: Record<string, string> = {
   English:    '🇺🇸',

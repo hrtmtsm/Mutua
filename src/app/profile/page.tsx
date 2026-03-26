@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
 import { LANGUAGES, GOALS, COMM_STYLES, FREQUENCY, type Language, type Goal, type CommStyle, type Frequency } from '@/lib/types';
-import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES } from '@/lib/constants';
+import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES, INTEREST_MIGRATION } from '@/lib/constants';
 import { supabase, saveProfile } from '@/lib/supabase';
 import type { UserAvailability } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
@@ -171,7 +171,12 @@ export default function ProfilePage() {
           .split(',')
           .map((s: string) => s.trim())
           .filter(Boolean)
-          .map((s: string) => allTags.find(t => t.toLowerCase() === s.toLowerCase()) ?? null)
+          .map((s: string) => {
+            const exact = allTags.find(t => t.toLowerCase() === s.toLowerCase());
+            if (exact) return exact;
+            const migrationKey = Object.keys(INTEREST_MIGRATION).find(k => k.toLowerCase() === s.toLowerCase());
+            return migrationKey ? INTEREST_MIGRATION[migrationKey] : null;
+          })
           .filter(Boolean) as string[];
         const deduped = [...new Set(normalized)].slice(0, 5);
         setInterests(deduped);
