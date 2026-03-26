@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
 import ReactCountryFlag from 'react-country-flag';
-import { LANG_FLAGS, LANG_AVATAR_COLOR, LANG_COUNTRY_CODE } from '@/lib/constants';
+import { LANG_AVATAR_COLOR, LANG_COUNTRY_CODE } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ function Avatar({ name, lang, avatarUrl, size = 'md' }: { name: string; lang: st
       {inner}
       {countryCode && (
         <div className="absolute -bottom-1.5 -left-1.5 w-5 h-5 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white">
-          <ReactCountryFlag countryCode={countryCode} svg style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <ReactCountryFlag countryCode={countryCode} svg style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
         </div>
       )}
     </div>
@@ -99,9 +99,6 @@ function SchedulingCard({
   onBookExchange:  () => void;
   onViewProfile:   () => void;
 }) {
-  const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
-  const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
-
   const [showPicker, setShowPicker] = useState(false);
 
   // Determine my pending state
@@ -126,7 +123,7 @@ function SchedulingCard({
           <div className="flex-1 min-w-0 pb-0.5">
             <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
             <p className="text-sm text-stone-500 mt-0.5">
-              {nativeFlag} {partner.nativeLang} · learning {learningFlag} {partner.learningLang}
+              {partner.nativeLang} · learning {partner.learningLang}
             </p>
           </div>
           {s === 'scheduled' && (

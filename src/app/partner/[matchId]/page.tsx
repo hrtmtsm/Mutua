@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase, getMessages, sendMessage, type Message } from '@/lib/supabase';
 import ReactCountryFlag from 'react-country-flag';
-import { LANG_FLAGS, LANG_AVATAR_COLOR, LANG_COUNTRY_CODE } from '@/lib/constants';
+import { LANG_AVATAR_COLOR, LANG_COUNTRY_CODE } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 import { ArrowLeft, MessageCircle, Send, X, Calendar } from 'lucide-react';
 
@@ -41,7 +41,7 @@ function Avatar({ name, lang, avatarUrl }: { name: string; lang: string; avatarU
       {inner}
       {countryCode && (
         <div className="absolute -bottom-2 -left-2 w-7 h-7 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white">
-          <ReactCountryFlag countryCode={countryCode} svg style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <ReactCountryFlag countryCode={countryCode} svg style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
         </div>
       )}
     </div>
@@ -214,8 +214,6 @@ export default function PartnerProfilePage() {
     </AppShell>
   );
 
-  const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
-  const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
   const s = partner.schedulingState;
 
   return (
@@ -241,7 +239,7 @@ export default function PartnerProfilePage() {
           <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} />
           <div>
             <h1 className="font-serif font-bold text-3xl text-[#171717]">{partner.name}</h1>
-            <p className="text-sm text-stone-400 mt-1">{nativeFlag} {partner.nativeLang} · Native</p>
+            <p className="text-sm text-stone-400 mt-1">{partner.nativeLang} · Native</p>
           </div>
         </div>
 
@@ -274,7 +272,7 @@ export default function PartnerProfilePage() {
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <p className="text-xs font-semibold text-stone-400 px-5 pt-5 pb-3">Preferences</p>
             {[
-              { label: 'Learning',   value: `${learningFlag} ${partner.learningLang}` },
+              { label: 'Learning',   value: partner.learningLang },
               { label: 'Goal',       value: partner.goal },
               { label: 'Style',      value: partner.commStyle },
               { label: 'Frequency',  value: partner.frequency },
