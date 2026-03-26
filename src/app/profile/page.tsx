@@ -163,7 +163,16 @@ export default function ProfilePage() {
       setGoal(p.goal);
       setCommStyle(p.comm_style);
       if (p.practice_frequency) setPracticeFrequency(p.practice_frequency);
-      if (p.interests) setInterests(p.interests.split(',').map((s: string) => s.trim()).filter(Boolean));
+      if (p.interests) {
+        const allTags = INTEREST_CATEGORIES.flatMap(c => c.tags);
+        const normalized = p.interests
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+          .map((s: string) => allTags.find(t => t.toLowerCase() === s.toLowerCase()) ?? null)
+          .filter(Boolean) as string[];
+        setInterests([...new Set(normalized)].slice(0, 5));
+      }
     }
 
     async function loadAvailability() {

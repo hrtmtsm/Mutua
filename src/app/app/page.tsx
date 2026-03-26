@@ -219,10 +219,11 @@ export default function SessionPage() {
       const { data: partnerProfile } = await supabase
         .from('profiles').select('name, avatar_url, interests').eq('session_id', partnerSessionId).maybeSingle();
 
-      const toTags = (s?: string | null) => s ? s.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const toTags = (s?: string | null) => s ? [...new Set(s.split(',').map(t => t.trim()).filter(Boolean))] : [];
       const myStoredProfile = localStorage.getItem('mutua_profile');
       const myInterests = myStoredProfile ? toTags(JSON.parse(myStoredProfile).interests) : [];
-      const sharedInterests = myInterests.filter(t => toTags(partnerProfile?.interests).includes(t));
+      const partnerTags = toTags(partnerProfile?.interests).map(t => t.toLowerCase());
+      const sharedInterests = myInterests.filter(t => partnerTags.includes(t.toLowerCase()));
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const storageAvatarUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${partnerSessionId}.jpg`;
