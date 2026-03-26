@@ -366,7 +366,7 @@ export default function TopNav() {
   }, [inboxOpen]);
 
   return (
-    <header className="sticky top-0 z-20 bg-[#F5F5F5] border-b border-stone-200/40">
+    <header className="sticky top-0 z-20 bg-[#EDEAE4] border-b border-stone-300/30">
       <div className="max-w-5xl mx-auto px-4 md:px-6 flex items-center h-14">
 
         {/* Wordmark */}
@@ -382,14 +382,13 @@ export default function TopNav() {
               <Link
                 key={href}
                 href={href}
-                className={`relative px-3 py-1 text-sm font-semibold transition-colors ${
-                  active ? 'text-neutral-900' : 'text-stone-400 hover:text-neutral-700'
+                className={`px-4 py-1.5 text-sm font-semibold transition-all rounded-full ${
+                  active
+                    ? 'text-neutral-900 bg-white shadow-sm'
+                    : 'text-stone-400 hover:text-neutral-700'
                 }`}
               >
                 {label}
-                {active && (
-                  <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-neutral-900 rounded-full" />
-                )}
               </Link>
             );
           })}
@@ -538,7 +537,7 @@ export function BottomNav() {
   const { pathname } = useNavState();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[#F5F5F5] border-t border-stone-200/40 flex items-center">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-[#EDEAE4] border-t border-stone-300/30 flex items-center">
       {BOTTOM_NAV.map(({ href, label, icon: Icon, match }) => {
         const active = match.some(p => pathname === p || pathname.startsWith(p + '/'));
         return (

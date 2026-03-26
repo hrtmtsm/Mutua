@@ -111,46 +111,46 @@ function SchedulingCard({
     (s === 'pending_b' && partner.iAmA);
 
   return (
-    <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+    <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
 
-      <button
-        onClick={onViewProfile}
-        className="w-full text-left block"
-      >
-        <div className="px-6 pt-6 pb-5 flex items-end gap-4">
+      {/* Header — avatar + name + badge */}
+      <button onClick={onViewProfile} className="w-full text-left">
+        <div className="px-6 pt-6 pb-5 flex items-start gap-4">
           <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
-          <div className="flex-1 min-w-0 pb-0.5">
-            <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
-            <p className="text-sm text-stone-500 mt-0.5">
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="font-serif font-bold text-[#171717] text-2xl leading-tight">{partner.name}</p>
+            <p className="text-sm text-stone-400 mt-1.5">
               {nativeFlag} {partner.nativeLang} · learning {learningFlag} {partner.learningLang}
             </p>
           </div>
-          {s === 'scheduled' && (
-            <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full shrink-0 self-start">Scheduled</span>
-          )}
-          {waitingOnPartner && (
-            <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full shrink-0 self-start">Waiting</span>
-          )}
-          {s === 'no_overlap' && (
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full shrink-0 self-start">No overlap</span>
-          )}
-          {s === 'computing' && (
-            <span className="text-xs font-semibold text-[#2B8FFF] bg-blue-50 px-2.5 py-1 rounded-full shrink-0 self-start">Matching…</span>
-          )}
+          <div className="shrink-0">
+            {s === 'scheduled' && (
+              <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full block">Scheduled</span>
+            )}
+            {waitingOnPartner && (
+              <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full block">Waiting</span>
+            )}
+            {s === 'no_overlap' && (
+              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full block">No overlap</span>
+            )}
+            {s === 'computing' && (
+              <span className="text-xs font-semibold text-[#2B8FFF] bg-blue-50 px-2.5 py-1 rounded-full block">Matching…</span>
+            )}
+          </div>
         </div>
       </button>
 
       {/* Bio */}
       {partner.bio && (
-        <div className="px-6 pb-1 pt-3 space-y-1">
-          <p className="text-xs font-semibold text-stone-400">About</p>
+        <div className="px-6 py-4 border-t border-stone-100">
+          <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1.5">About</p>
           <p className="text-sm text-stone-500 leading-relaxed">{partner.bio}</p>
         </div>
       )}
 
       {/* In common */}
-      <div className="px-6 py-4">
-        <p className="text-xs font-semibold text-stone-400 mb-2">In common</p>
+      <div className="px-6 py-4 border-t border-stone-100">
+        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2.5">In common</p>
         <div className="flex flex-wrap gap-1.5">
           {[partner.goal, partner.commStyle, partner.frequency, ...partner.sharedInterests].filter(Boolean).map((v, i) => (
             <span key={i} className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">{v}</span>
@@ -159,51 +159,54 @@ function SchedulingCard({
       </div>
 
       {/* State-driven footer */}
-      <div className="px-6 pb-5 pt-1">
-
-        {iNeedToSet && (
-          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl mt-3">
+      {iNeedToSet && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white text-sm rounded-xl">
             Pick a time to meet →
           </button>
-        )}
+        </div>
+      )}
 
-        {waitingOnPartner && (
-          <p className="text-sm text-stone-400 mt-3">
+      {waitingOnPartner && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <p className="text-sm text-stone-400">
             You're set — waiting on <span className="font-medium text-neutral-600">{partner.name}</span> to share their availability.
           </p>
-        )}
+        </div>
+      )}
 
-        {s === 'computing' && (
-          <p className="text-sm text-stone-400 mt-3">Finding a time that works for both of you…</p>
-        )}
+      {s === 'computing' && (
+        <div className="px-6 py-5 border-t border-stone-100">
+          <p className="text-sm text-stone-400">Finding a time that works for both of you…</p>
+        </div>
+      )}
 
-        {s === 'no_overlap' && (
-          <div className="space-y-3 mt-3">
-            <p className="text-sm text-stone-400">No overlapping slots yet. Update your free times and we'll keep trying.</p>
-            <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white font-bold text-sm rounded-xl">
-              Update my availability →
+      {s === 'no_overlap' && (
+        <div className="px-6 py-5 border-t border-stone-100 space-y-3">
+          <p className="text-sm text-stone-400">No overlapping slots yet. Update your free times and we'll keep trying.</p>
+          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white text-sm rounded-xl">
+            Update my availability →
+          </button>
+        </div>
+      )}
+
+      {s === 'scheduled' && partner.scheduledAt && (
+        <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest">First session</p>
+            <p className="font-semibold text-neutral-800 text-sm mt-1">{fmtScheduledAt(partner.scheduledAt)}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={onReschedule} className="px-4 py-2.5 border border-stone-200 bg-white text-sm text-neutral-500 font-medium rounded-xl hover:bg-stone-50 transition-colors">
+              Reschedule
+            </button>
+            <button onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)} className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl">
+              Confirm →
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {s === 'scheduled' && partner.scheduledAt && (
-          <div className="flex items-center justify-between gap-3 mt-3">
-            <div>
-              <p className="text-xs text-stone-400">First session</p>
-              <p className="font-semibold text-neutral-800 text-sm mt-0.5">{fmtScheduledAt(partner.scheduledAt)}</p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <button onClick={onReschedule} className="text-sm text-stone-400 hover:text-neutral-600 font-medium transition-colors">
-                Reschedule
-              </button>
-              <button onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)} className="px-5 py-2.5 btn-primary text-white text-sm font-bold rounded-xl">
-                Confirm →
-              </button>
-            </div>
-          </div>
-        )}
-
-      </div>
     </div>
   );
 }
