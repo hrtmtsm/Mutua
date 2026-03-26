@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-const TOKEN = 'phc_Y86JlCr1kE5MTeuNNO8biWIfKn8mThrf7Q6abcEDNBs';
+const TOKEN = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
 const HOST  = 'https://us.i.posthog.com';
 
 let initialised = false;
