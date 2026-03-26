@@ -203,7 +203,7 @@ function SchedulingCard({
               Reschedule
             </button>
             <button onClick={() => onConfirm(partner.matchId, partner.scheduledAt!)} className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl">
-              Confirm →
+              I'm in →
             </button>
           </div>
         </div>
