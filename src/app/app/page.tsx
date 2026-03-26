@@ -143,14 +143,14 @@ function SchedulingCard({
       {/* Bio */}
       {partner.bio && (
         <div className="px-6 pb-5">
-          <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1.5">About</p>
+          <p className="text-xs font-medium text-stone-400 mb-1.5">About</p>
           <p className="text-sm text-stone-500 leading-relaxed">{partner.bio}</p>
         </div>
       )}
 
       {/* In common */}
       <div className="px-6 pb-5">
-        <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2.5">In common</p>
+        <p className="text-xs font-medium text-stone-400 mb-2.5">In common</p>
         <div className="flex flex-wrap gap-1.5">
           {[partner.goal, partner.commStyle, partner.frequency, ...partner.sharedInterests].filter(Boolean).map((v, i) => (
             <span key={i} className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">{v}</span>
@@ -193,7 +193,7 @@ function SchedulingCard({
       {s === 'scheduled' && partner.scheduledAt && (
         <div className="px-6 pb-6 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest">First session</p>
+            <p className="text-xs font-medium text-stone-400">First session</p>
             <p className="font-semibold text-neutral-800 text-sm mt-1">{fmtScheduledAt(partner.scheduledAt)}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
