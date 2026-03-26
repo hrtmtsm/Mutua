@@ -3,8 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
-import ReactCountryFlag from 'react-country-flag';
-import { LANG_AVATAR_COLOR, LANG_COUNTRY_CODE } from '@/lib/constants';
+import { LANG_FLAGS, LANG_AVATAR_COLOR } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -30,27 +29,19 @@ interface PartnerCard {
 function Avatar({ name, lang, avatarUrl, size = 'md' }: { name: string; lang: string; avatarUrl?: string | null; size?: 'sm' | 'md' | 'lg' }) {
   const bg  = LANG_AVATAR_COLOR[lang] ?? '#3b82f6';
   const cls = size === 'lg' ? 'w-16 h-16 text-xl' : size === 'sm' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base';
-  const countryCode = LANG_COUNTRY_CODE[lang];
-  const inner = avatarUrl ? (
-    <div className={`${cls} rounded-2xl overflow-hidden shrink-0`}>
-      <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-    </div>
-  ) : (
+  if (avatarUrl) {
+    return (
+      <div className={`${cls} rounded-2xl overflow-hidden shrink-0`}>
+        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+  return (
     <div
       style={{ backgroundColor: bg }}
       className={`${cls} rounded-2xl flex items-center justify-center font-black text-white shrink-0`}
     >
       {name.trim().slice(0, 2).toUpperCase()}
-    </div>
-  );
-  return (
-    <div className="relative shrink-0 inline-block">
-      {inner}
-      {countryCode && (
-        <div className="absolute -bottom-2 -left-2 rounded border-2 border-white shadow-sm overflow-hidden" style={{ width: 24, height: 16 }}>
-          <ReactCountryFlag countryCode={countryCode} svg style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        </div>
-      )}
     </div>
   );
 }
@@ -99,6 +90,9 @@ function SchedulingCard({
   onBookExchange:  () => void;
   onViewProfile:   () => void;
 }) {
+  const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
+  const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
+
   const [showPicker, setShowPicker] = useState(false);
 
   // Determine my pending state
@@ -123,7 +117,7 @@ function SchedulingCard({
           <div className="flex-1 min-w-0 pb-0.5">
             <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
             <p className="text-sm text-stone-500 mt-0.5">
-              {partner.nativeLang} · learning {partner.learningLang}
+              {nativeFlag} {partner.nativeLang} · learning {learningFlag} {partner.learningLang}
             </p>
           </div>
           {s === 'scheduled' && (
