@@ -6,7 +6,7 @@ import {
   LANGUAGES, GOALS, COMM_STYLES, FREQUENCY,
   type Language, type Goal, type CommStyle, type Frequency, type UserProfile,
 } from '@/lib/types';
-import { GOAL_DETAILS, COMM_STYLE_DETAILS, FREQUENCY_DETAILS } from '@/lib/constants';
+import { GOAL_DETAILS, COMM_STYLE_DETAILS, FREQUENCY_DETAILS, LANG_FLAGS } from '@/lib/constants';
 import { saveProfile, saveToWaitlist } from '@/lib/supabase';
 
 // ---- sub-components --------------------------------------------------------
@@ -77,7 +77,7 @@ function LangCard({
           : 'border-stone-200 bg-white text-stone-700 hover:border-[#2B8FFF]'
       }`}
     >
-      {lang}
+      {LANG_FLAGS[lang] ?? ''} {lang}
     </button>
   );
 }
