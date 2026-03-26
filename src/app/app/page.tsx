@@ -23,6 +23,7 @@ interface PartnerCard {
   iAmA:             boolean;         // true = I am session_id_a
   avatarUrl:        string | null;
   sharedInterests:  string[];
+  bio?:             string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -138,6 +139,13 @@ function SchedulingCard({
         </div>
       </button>
 
+      {/* Bio */}
+      {partner.bio && (
+        <div className="px-6 pb-1 pt-3">
+          <p className="text-sm text-stone-500 leading-relaxed">{partner.bio}</p>
+        </div>
+      )}
+
       {/* In common */}
       <div className="px-6 py-4">
         <p className="text-xs font-semibold text-stone-400 mb-2">In common</p>
@@ -217,7 +225,7 @@ export default function SessionPage() {
       const partnerSessionId = isA ? m.session_id_b : m.session_id_a;
 
       const { data: partnerProfile } = await supabase
-        .from('profiles').select('name, avatar_url, interests').eq('session_id', partnerSessionId).maybeSingle();
+        .from('profiles').select('name, avatar_url, interests, bio').eq('session_id', partnerSessionId).maybeSingle();
 
       const allTags = INTEREST_CATEGORIES.flatMap(c => c.tags);
       const normalizeTags = (s?: string | null) => s
@@ -245,6 +253,7 @@ export default function SessionPage() {
       if (partnerProfile?.name) card.name = partnerProfile.name;
       card.avatarUrl = partnerProfile?.avatar_url ?? storageAvatarUrl;
       card.sharedInterests = sharedInterests;
+      card.bio = partnerProfile?.bio ?? undefined;
 
       setPartner(card);
       setMatchId(m.id);
