@@ -58,13 +58,14 @@ function useNavState() {
 // ── Thread list ───────────────────────────────────────────────────────────────
 
 function MessagesList({
-  matchId, partnerName, messages, myId, onOpen,
+  matchId, partnerName, messages, myId, onOpen, hasUnreadMsg,
 }: {
   matchId: string | null;
   partnerName: string;
   messages: Message[];
   myId: string;
   onOpen: () => void;
+  hasUnreadMsg: boolean;
 }) {
   if (!matchId || messages.length === 0) {
     return (
@@ -90,11 +91,14 @@ function MessagesList({
           <span className="text-xs font-black text-white">{initials}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-neutral-900 leading-tight">{partnerName}</p>
-          <p className="text-xs text-stone-400 truncate mt-0.5">
+          <p className={`text-sm leading-tight ${hasUnreadMsg ? 'font-bold text-neutral-900' : 'font-semibold text-neutral-900'}`}>{partnerName}</p>
+          <p className={`text-xs truncate mt-0.5 ${hasUnreadMsg ? 'text-neutral-700 font-medium' : 'text-stone-400'}`}>
             {last.sender_id === myId ? 'You: ' : ''}{last.text}
           </p>
         </div>
+        {hasUnreadMsg && (
+          <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+        )}
       </button>
     </div>
   );
@@ -400,9 +404,13 @@ export default function TopNav() {
             onClick={() => {
               setInboxOpen(o => !o);
               setMsgView('list');
-              setHasUnread(false);
-              localStorage.removeItem('mutua_unread_notification');
-              localStorage.removeItem('mutua_unread_message');
+              // Only clear notification unread on bell click; message unread clears when chat opens
+              if (!!localStorage.getItem('mutua_unread_notification')) {
+                localStorage.removeItem('mutua_unread_notification');
+              }
+              if (!localStorage.getItem('mutua_unread_message')) {
+                setHasUnread(false);
+              }
             }}
             className="relative p-1.5 text-stone-400 hover:text-neutral-700 transition-colors"
           >
@@ -495,7 +503,12 @@ export default function TopNav() {
                   partnerName={partnerName}
                   messages={messages}
                   myId={myId}
-                  onOpen={() => setMsgView('chat')}
+                  hasUnreadMsg={!!localStorage.getItem('mutua_unread_message')}
+                  onOpen={() => {
+                    setMsgView('chat');
+                    localStorage.removeItem('mutua_unread_message');
+                    setHasUnread(!!localStorage.getItem('mutua_unread_notification'));
+                  }}
                 />
               )}
             </div>
