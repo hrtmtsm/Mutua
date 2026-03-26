@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
 import { LANGUAGES, GOALS, COMM_STYLES, FREQUENCY, type Language, type Goal, type CommStyle, type Frequency } from '@/lib/types';
-import { LANG_FLAGS, LANG_AVATAR_COLOR } from '@/lib/constants';
+import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES } from '@/lib/constants';
 import { supabase, saveProfile } from '@/lib/supabase';
 import type { UserAvailability } from '@/lib/supabase';
 import AppShell from '@/components/AppShell';
@@ -148,7 +148,7 @@ export default function ProfilePage() {
   const [goal,       setGoal]       = useState<Goal>('Casual conversation');
   const [commStyle,  setCommStyle]  = useState<CommStyle>('Voice call');
   const [practiceFrequency, setPracticeFrequency] = useState<Frequency>('Once a week');
-  const [interests, setInterests] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem('mutua_profile');
@@ -163,7 +163,7 @@ export default function ProfilePage() {
       setGoal(p.goal);
       setCommStyle(p.comm_style);
       if (p.practice_frequency) setPracticeFrequency(p.practice_frequency);
-      if (p.interests) setInterests(p.interests);
+      if (p.interests) setInterests(p.interests.split(',').map((s: string) => s.trim()).filter(Boolean));
     }
 
     async function loadAvailability() {
@@ -245,7 +245,7 @@ export default function ProfilePage() {
       goal,
       comm_style:         commStyle,
       practice_frequency: practiceFrequency,
-      interests:          interests.trim() || undefined,
+      interests:          interests.length ? interests.join(', ') : undefined,
     };
     localStorage.setItem('mutua_profile', JSON.stringify(updated));
     setProfile(updated);
@@ -366,13 +366,61 @@ export default function ProfilePage() {
                   { label: 'Goal',             value: goal,             editor: <SelectWrap><select value={goal} onChange={e => setGoal(e.target.value as Goal)} className={selectClass}>{GOALS.map(g => <option key={g}>{g}</option>)}</select></SelectWrap> },
                   { label: 'Style',            value: commStyle,        editor: <SelectWrap><select value={commStyle} onChange={e => setCommStyle(e.target.value as CommStyle)} className={selectClass}>{COMM_STYLES.map(s => <option key={s}>{s}</option>)}</select></SelectWrap> },
                   { label: 'Frequency',        value: practiceFrequency, editor: <SelectWrap><select value={practiceFrequency} onChange={e => setPracticeFrequency(e.target.value as Frequency)} className={selectClass}>{FREQUENCY.map(f => <option key={f}>{f}</option>)}</select></SelectWrap> },
-                  { label: 'Interests',        value: interests || '—',  editor: <input type="text" value={interests} onChange={e => setInterests(e.target.value)} placeholder="e.g. music, travel, cooking" className="text-sm font-semibold text-neutral-900 border border-stone-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-neutral-900 bg-stone-50 w-48" /> },
                 ].map(({ label, value, editor }) => (
                   <div key={label} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
                     <span className="text-xs font-semibold text-stone-400">{label}</span>
                     {editing ? editor : <span className="text-sm font-semibold text-neutral-500">{value}</span>}
                   </div>
                 ))}
+              </div>
+
+              {/* Interests tag picker */}
+              <div className="pt-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-stone-400">Interests</span>
+                  {interests.length > 0 && !editing && (
+                    <span className="text-xs text-stone-400">{interests.length} selected</span>
+                  )}
+                </div>
+                {editing ? (
+                  <div className="space-y-3">
+                    {INTEREST_CATEGORIES.map(cat => (
+                      <div key={cat.label}>
+                        <p className="text-xs text-stone-400 mb-1.5">{cat.label}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {cat.tags.map(tag => {
+                            const selected = interests.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => setInterests(prev =>
+                                  selected ? prev.filter(t => t !== tag) : [...prev, tag]
+                                )}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                  selected
+                                    ? 'bg-neutral-900 text-white'
+                                    : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                }`}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {interests.length > 0
+                      ? interests.map(tag => (
+                          <span key={tag} className="px-2.5 py-1 bg-stone-100 text-xs font-medium text-stone-500 rounded-full">{tag}</span>
+                        ))
+                      : <span className="text-sm text-stone-400">—</span>
+                    }
+                  </div>
+                )}
               </div>
 
               {editing && (
