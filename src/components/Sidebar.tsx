@@ -371,7 +371,7 @@ export default function TopNav() {
 
         {/* Wordmark */}
         <Link href="/app" className="font-serif font-bold text-xl tracking-tight text-neutral-900 shrink-0">
-          mutua
+          Mutua
         </Link>
 
         {/* Nav links — desktop only */}

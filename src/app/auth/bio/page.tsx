@@ -38,7 +38,7 @@ export default function BioPage() {
     <div className="min-h-screen flex flex-col bg-white">
 
       <nav className="px-8 py-5 shrink-0">
-        <span className="font-serif font-black text-2xl tracking-tight text-neutral-900">mutua</span>
+        <span className="font-serif font-black text-2xl tracking-tight text-neutral-900">Mutua</span>
       </nav>
 
       <div className="flex-1 flex items-center justify-center px-6">
