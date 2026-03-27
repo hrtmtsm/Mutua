@@ -103,7 +103,7 @@ const GREETINGS: Record<string, string> = {
 interface DayData    { count: number; totalDuration: number; partners: string[]; }
 interface TooltipPos { key: string; x: number; y: number; }
 
-function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targetLang: string; }) {
+function RhythmChart({ sessions, targetLang, summary }: { sessions: SessionEntry[]; targetLang: string; summary: string | null }) {
   const [tooltip, setTooltip] = useState<TooltipPos | null>(null);
 
   // Aggregate per-day
@@ -208,6 +208,10 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
           ))}
         </div>
       </div>
+
+      {summary && (
+        <p className="text-xs text-stone-400 mt-4">{summary}</p>
+      )}
 
       {/* Tooltip */}
       {tooltip && tooltipData && (
@@ -322,11 +326,8 @@ export default function HistoryPage() {
         {/* ── 2. Practice rhythm ───────────────────────────────── */}
         {hasAnySessions && (
           <div className="space-y-2">
-            <div className="flex items-baseline justify-between">
-              <p className="text-sm font-medium text-stone-500">Recent practice</p>
-              {rhythmSummary && <p className="text-xs text-stone-400">{rhythmSummary}</p>}
-            </div>
-            <RhythmChart sessions={sessions} targetLang={targetLang} />
+            <p className="text-sm font-medium text-stone-500">Recent practice</p>
+            <RhythmChart sessions={sessions} targetLang={targetLang} summary={rhythmSummary} />
           </div>
         )}
 
