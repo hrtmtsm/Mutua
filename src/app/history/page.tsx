@@ -29,15 +29,6 @@ interface RhythmData {
   weeksRunning:     number;
 }
 
-interface MonthBucket {
-  label: string;   // "Jan", "Feb" …
-  count: number;   // sessions that month
-}
-
-interface WeekBucket {
-  label: string;   // "Mar 17"
-  count: number;
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -95,89 +86,105 @@ function computeRhythm(sessions: SessionEntry[], freq: string): RhythmData {
   return { thisWeekSessions, thisWeekDone, weekGoal, weeksRunning };
 }
 
-// Build last 12 months of session counts
-function buildMonthlyData(sessions: SessionEntry[]): MonthBucket[] {
-  const now = new Date();
-  return Array.from({ length: 12 }, (_, i) => {
-    const monthOffset = 11 - i;
-    const start = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-    const end   = new Date(now.getFullYear(), now.getMonth() - monthOffset + 1, 1);
-    const count = sessions.filter(s => { const d = new Date(s.date); return d >= start && d < end; }).length;
-    return { label: start.toLocaleDateString('en-US', { month: 'short' }), count };
-  });
-}
+// ── GitHub-style consistency grid ────────────────────────────────────────────
 
-// Build last 16 weeks of session counts
-function buildWeeklyData(sessions: SessionEntry[]): WeekBucket[] {
-  const weekStart = getWeekStart(new Date());
-  return Array.from({ length: 16 }, (_, i) => {
-    const offset = 15 - i;
-    const start  = new Date(weekStart);
-    start.setDate(start.getDate() - offset * 7);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-    const count = sessions.filter(s => { const d = new Date(s.date); return d >= start && d < end; }).length;
-    const label = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return { label, count };
-  });
-}
-
-// ── Rhythm chart component (monthly / weekly toggle) ─────────────────────────
+const WEEKS = 12; // columns
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
-  const [view, setView] = useState<'monthly' | 'weekly'>('monthly');
-  const months = buildMonthlyData(sessions);
-  const weeks  = buildWeeklyData(sessions);
-  const buckets = view === 'monthly' ? months : weeks;
-  const maxCount = Math.max(...buckets.map(b => b.count), 1);
+  // Count sessions per calendar day
+  const counts = new Map<string, number>();
+  for (const s of sessions) {
+    const key = s.date.slice(0, 10);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  // Grid starts at Monday of the week (WEEKS-1) weeks ago
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const gridStart = getWeekStart(today);
+  gridStart.setDate(gridStart.getDate() - (WEEKS - 1) * 7);
+
+  // Build WEEKS columns × 7 rows
+  const grid: { date: Date; key: string }[][] = Array.from({ length: WEEKS }, (_, w) =>
+    Array.from({ length: 7 }, (_, d) => {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + w * 7 + d);
+      return { date, key: date.toISOString().slice(0, 10) };
+    })
+  );
+
+  // Month labels: place label at the first cell of a new month in row 0
+  const monthLabels: { col: number; label: string }[] = [];
+  grid.forEach((week, wi) => {
+    const firstDay = week[0].date;
+    if (wi === 0 || firstDay.getDate() <= 7) {
+      monthLabels.push({ col: wi, label: firstDay.toLocaleDateString('en-US', { month: 'short' }) });
+    }
+  });
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Your practice rhythm</p>
-        <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-0.5">
-          <button
-            onClick={() => setView('monthly')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-              view === 'monthly' ? 'bg-white text-neutral-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setView('weekly')}
-            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-              view === 'weekly' ? 'bg-white text-neutral-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'
-            }`}
-          >
-            Weekly
-          </button>
-        </div>
-      </div>
-      <div className="flex items-end gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-        {buckets.map((b, i) => {
-          const filled  = b.count > 0;
-          const opacity = filled ? Math.max(0.35, b.count / maxCount) : 0;
-          // Show every label in monthly, every other in weekly to avoid crowding
-          const showLabel = view === 'monthly' || i % 2 === 0;
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2" style={{ minWidth: view === 'weekly' ? 28 : undefined }}>
-              <div className="w-full rounded-md bg-stone-100 overflow-hidden" style={{ height: 48 }}>
-                <div
-                  className="w-full rounded-md transition-all duration-500"
-                  style={{
-                    height: filled ? `${Math.max(28, (b.count / maxCount) * 48)}px` : '0px',
-                    background: `rgba(43,143,255,${opacity + 0.2})`,
-                    marginTop: 'auto',
-                  }}
-                />
-              </div>
-              <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap">
-                {showLabel ? b.label : ''}
+      <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-4">Your practice rhythm</p>
+
+      <div className="flex gap-1">
+        {/* Day-of-week labels */}
+        <div className="flex flex-col gap-1 mr-1 mt-5">
+          {DAY_LABELS.map((l, i) => (
+            <div key={i} className="h-2.5 flex items-center">
+              <span className="text-[9px] text-stone-300 font-medium w-2.5 text-center leading-none">
+                {i % 2 === 0 ? l : ''}
               </span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex flex-col gap-1">
+          {/* Month labels row */}
+          <div className="flex gap-1 h-4">
+            {grid.map((_, wi) => {
+              const ml = monthLabels.find(m => m.col === wi);
+              return (
+                <div key={wi} className="w-2.5 flex items-center">
+                  {ml && (
+                    <span className="text-[9px] text-stone-300 font-medium whitespace-nowrap -ml-0.5">
+                      {ml.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Day cells: render row by row (Mon–Sun) */}
+          {Array.from({ length: 7 }, (_, di) => (
+            <div key={di} className="flex gap-1">
+              {grid.map((week, wi) => {
+                const { date, key } = week[di];
+                const isFuture = date > today;
+                const n = counts.get(key) ?? 0;
+                let bg: string;
+                if (isFuture) {
+                  bg = '#F5F5F4'; // stone-100, slightly muted
+                } else if (n === 0) {
+                  bg = '#E7E5E4'; // stone-200
+                } else if (n === 1) {
+                  bg = 'rgba(43,143,255,0.45)';
+                } else {
+                  bg = 'rgba(43,143,255,0.80)';
+                }
+                return (
+                  <div
+                    key={wi}
+                    className="w-2.5 h-2.5 rounded-[2px]"
+                    style={{ background: bg }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
