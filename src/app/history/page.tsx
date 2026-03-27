@@ -103,7 +103,7 @@ const GREETINGS: Record<string, string> = {
 interface DayData    { count: number; totalDuration: number; partners: string[]; }
 interface TooltipPos { key: string; x: number; y: number; }
 
-function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targetLang: string }) {
+function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targetLang: string; }) {
   const [tooltip, setTooltip] = useState<TooltipPos | null>(null);
 
   // Aggregate per-day
@@ -141,26 +141,12 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
     }
   });
 
-  // Single summary line — scope matches the visible grid range, not just this month
-  const totalMin  = sessions.reduce((sum, s) => sum + (s.duration ?? 0), 0);
-  const summaryLine = totalMin > 0
-    ? `${totalMin} min in recent months`
-    : sessions.length > 0
-      ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} in recent months`
-      : null;
 
   const tooltipData = tooltip ? (dayMap.get(tooltip.key) ?? null) : null;
   const greeting    = GREETINGS[targetLang.toLowerCase()] ?? '';
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-xs font-medium text-stone-400">Recent practice</p>
-          <p className="text-[11px] text-stone-300 mt-0.5">Blue squares show days you practiced</p>
-        </div>
-        {summaryLine && <p className="text-xs text-stone-400 shrink-0 ml-4">{summaryLine}</p>}
-      </div>
 
       <div className="flex gap-2 min-w-0">
         {/* Day-of-week labels */}
@@ -277,6 +263,13 @@ export default function HistoryPage() {
   const hasAnySessions = sessions.length > 0;
   const visiblePartners = showAll ? partners : partners.slice(0, 3);
 
+  const totalMin = sessions.reduce((sum, s) => sum + (s.duration ?? 0), 0);
+  const rhythmSummary = totalMin > 0
+    ? `${totalMin} min in recent months`
+    : sessions.length > 0
+      ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} in recent months`
+      : null;
+
   // Weekly rhythm supporting line
   let rhythmLine = '';
   if (thisWeekDone && weeksRunning > 1) {
@@ -302,9 +295,9 @@ export default function HistoryPage() {
         </div>
 
         {/* ── 1. This week ─────────────────────────────────────── */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-stone-500">This week</p>
         <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
-          <p className="text-xs font-medium text-stone-400 mb-4">This week</p>
-
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="font-serif font-semibold text-[#171717] text-xl leading-tight">
@@ -324,14 +317,24 @@ export default function HistoryPage() {
             )}
           </div>
         </div>
+        </div>
 
-        {/* ── 2. Monthly rhythm ────────────────────────────────── */}
-        {hasAnySessions && <RhythmChart sessions={sessions} targetLang={targetLang} />}
+        {/* ── 2. Practice rhythm ───────────────────────────────── */}
+        {hasAnySessions && (
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm font-medium text-stone-500">Recent practice</p>
+              {rhythmSummary && <p className="text-xs text-stone-400">{rhythmSummary}</p>}
+            </div>
+            <RhythmChart sessions={sessions} targetLang={targetLang} />
+          </div>
+        )}
 
         {/* ── 3. Review your exchanges ─────────────────────────── */}
         {partners.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-stone-400">Review your exchanges</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-stone-500">Your exchanges</p>
+            <div className="space-y-3">
 
             {visiblePartners.map(p => (
               <div
@@ -384,6 +387,7 @@ export default function HistoryPage() {
                 View all →
               </button>
             )}
+            </div>
           </div>
         )}
 
