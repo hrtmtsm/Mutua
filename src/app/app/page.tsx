@@ -181,7 +181,6 @@ function SchedulingCard({
         {/* Date */}
         <div className="px-6 pb-6">
           <p className="font-serif font-black text-[#171717] text-3xl leading-tight">{dateLine}, {timeLine}</p>
-          <p className="text-stone-400 text-sm mt-1">with {partner.name}</p>
         </div>
 
         {/* CTA */}
