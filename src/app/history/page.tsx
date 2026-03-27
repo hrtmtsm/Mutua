@@ -203,7 +203,7 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
           {/* Grid columns */}
           <div className="flex flex-col gap-1.5 flex-1 min-w-0">
             {/* Month labels */}
-            <div className="h-5" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
+            <div className="h-9" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
               {grid.map((_, wi) => {
                 const ml = monthLabels.find(m => m.col === wi);
                 return (
@@ -273,7 +273,7 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
       </div>
 
       {/* Total — always rendered to hold height */}
-      <p className="text-xs text-stone-400 mt-3 text-right h-4">
+      <p className="text-xs text-stone-400 mt-2 text-right h-4">
         {visibleTotal > 0 ? `${visibleTotal} min total` : ''}
       </p>
 
