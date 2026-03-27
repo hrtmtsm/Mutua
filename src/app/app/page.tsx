@@ -180,8 +180,7 @@ function SchedulingCard({
 
         {/* Date */}
         <div className="px-6 pb-6">
-          <p className="font-serif font-black text-[#171717] text-4xl leading-tight">{dateLine}</p>
-          <p className="text-stone-400 text-sm mt-1">{timeLine}</p>
+          <p className="font-serif font-black text-[#171717] text-3xl leading-tight">{dateLine}, {timeLine}</p>
         </div>
 
         {/* CTA */}
