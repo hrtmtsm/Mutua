@@ -124,15 +124,15 @@ function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
   });
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
+    <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
       <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-4">Your practice rhythm</p>
 
-      <div className="flex gap-1">
+      <div className="flex gap-2">
         {/* Day-of-week labels */}
-        <div className="flex flex-col gap-1 mr-1 mt-5">
+        <div className="flex flex-col gap-1.5 mr-0.5 mt-6">
           {DAY_LABELS.map((l, i) => (
-            <div key={i} className="h-2.5 flex items-center">
-              <span className="text-[9px] text-stone-300 font-medium w-2.5 text-center leading-none">
+            <div key={i} className="h-4 flex items-center">
+              <span className="text-[10px] text-stone-400 font-medium w-3 text-center leading-none">
                 {i % 2 === 0 ? l : ''}
               </span>
             </div>
@@ -140,15 +140,15 @@ function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
         </div>
 
         {/* Grid */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5 flex-1">
           {/* Month labels row */}
-          <div className="flex gap-1 h-4">
+          <div className="flex gap-1.5 h-5">
             {grid.map((_, wi) => {
               const ml = monthLabels.find(m => m.col === wi);
               return (
-                <div key={wi} className="w-2.5 flex items-center">
+                <div key={wi} className="w-4 flex items-center">
                   {ml && (
-                    <span className="text-[9px] text-stone-300 font-medium whitespace-nowrap -ml-0.5">
+                    <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap -ml-0.5">
                       {ml.label}
                     </span>
                   )}
@@ -159,25 +159,25 @@ function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
 
           {/* Day cells: render row by row (Mon–Sun) */}
           {Array.from({ length: 7 }, (_, di) => (
-            <div key={di} className="flex gap-1">
+            <div key={di} className="flex gap-1.5">
               {grid.map((week, wi) => {
                 const { date, key } = week[di];
                 const isFuture = date > today;
                 const n = counts.get(key) ?? 0;
                 let bg: string;
                 if (isFuture) {
-                  bg = '#F5F5F4'; // stone-100, slightly muted
+                  bg = '#E5E5E5'; // neutral-200, same as empty so future doesn't look special
                 } else if (n === 0) {
-                  bg = '#E7E5E4'; // stone-200
+                  bg = '#E5E5E5'; // neutral-200 — visible but not dominant
                 } else if (n === 1) {
-                  bg = 'rgba(43,143,255,0.45)';
+                  bg = '#60A5FA'; // blue-400
                 } else {
-                  bg = 'rgba(43,143,255,0.80)';
+                  bg = '#2563EB'; // blue-600 — clearly more active
                 }
                 return (
                   <div
                     key={wi}
-                    className="w-2.5 h-2.5 rounded-[2px]"
+                    className="w-4 h-4 rounded-[3px]"
                     style={{ background: bg }}
                   />
                 );
