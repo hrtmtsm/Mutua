@@ -280,7 +280,7 @@ function SchedulingCard({
 
       {iNeedToSet && (
         <div className="px-6 pb-6">
-          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white text-sm rounded-xl">
+          <button onClick={onBookExchange} className="px-5 py-3 btn-primary text-white text-sm rounded-xl">
             Pick a time to meet →
           </button>
         </div>
@@ -303,7 +303,7 @@ function SchedulingCard({
       {s === 'no_overlap' && (
         <div className="px-6 pb-6 space-y-3">
           <p className="text-sm text-stone-400">No overlapping slots yet. Update your free times and we'll keep trying.</p>
-          <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white text-sm rounded-xl">
+          <button onClick={onBookExchange} className="px-5 py-3 btn-primary text-white text-sm rounded-xl">
             Update my availability →
           </button>
         </div>
