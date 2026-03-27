@@ -29,6 +29,11 @@ interface RhythmData {
   weeksRunning:     number;
 }
 
+interface MonthBucket {
+  label: string;   // "Jan", "Feb" …
+  count: number;   // sessions that month
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string) {
@@ -85,78 +90,48 @@ function computeRhythm(sessions: SessionEntry[], freq: string): RhythmData {
   return { thisWeekSessions, thisWeekDone, weekGoal, weeksRunning };
 }
 
-function buildConsistencyGrid(sessions: SessionEntry[], weeks = 12): boolean[] {
-  const sessionDates = new Set(sessions.map(s => new Date(s.date).toDateString()));
-  const weekStart = getWeekStart(new Date());
-  const gridStart = new Date(weekStart);
-  gridStart.setDate(gridStart.getDate() - (weeks - 1) * 7);
-  return Array.from({ length: weeks * 7 }, (_, i) => {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + i);
-    return sessionDates.has(d.toDateString());
+// Build last 12 months of session counts
+function buildMonthlyData(sessions: SessionEntry[]): MonthBucket[] {
+  const now = new Date();
+  return Array.from({ length: 12 }, (_, i) => {
+    const monthOffset = 11 - i;
+    const start = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+    const end   = new Date(now.getFullYear(), now.getMonth() - monthOffset + 1, 1);
+    const count = sessions.filter(s => { const d = new Date(s.date); return d >= start && d < end; }).length;
+    return { label: start.toLocaleDateString('en-US', { month: 'short' }), count };
   });
 }
 
-// ── Consistency graph ─────────────────────────────────────────────────────────
+// ── Monthly rhythm component ──────────────────────────────────────────────────
 
-const GRAPH_WEEKS = 24;
-
-function ConsistencyGraph({ grid }: { grid: boolean[] }) {
-  const weekStart = getWeekStart(new Date());
-  const gridStart = new Date(weekStart);
-  gridStart.setDate(gridStart.getDate() - (GRAPH_WEEKS - 1) * 7);
-
-  const monthLabels: { col: number; label: string }[] = [];
-  let lastMonth = -1;
-  for (let w = 0; w < GRAPH_WEEKS; w++) {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + w * 7);
-    const m = d.getMonth();
-    if (m !== lastMonth) {
-      monthLabels.push({ col: w, label: d.toLocaleDateString('en-US', { month: 'short' }) });
-      lastMonth = m;
-    }
-  }
+function MonthlyRhythm({ months }: { months: MonthBucket[] }) {
+  const maxCount = Math.max(...months.map(m => m.count), 1);
 
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-3">Your practice rhythm</p>
-      <div className="flex gap-1.5 items-start">
-        {/* Day labels — M W F only */}
-        <div className="flex flex-col gap-1.5 pt-0.5 mr-1">
-          {['M','','W','','F','',''].map((label, i) => (
-            <div key={i} className="h-3.5 flex items-center">
-              <span className="text-[10px] text-stone-300 font-medium w-2">{label}</span>
-            </div>
-          ))}
-        </div>
-        {/* Grid */}
-        <div className="flex flex-col gap-1.5">
-          {/* Month labels */}
-          <div className="flex gap-1.5 h-3.5">
-            {Array.from({ length: GRAPH_WEEKS }, (_, w) => {
-              const label = monthLabels.find(m => m.col === w);
-              return (
-                <div key={w} className="w-3.5 relative">
-                  {label && <span className="absolute left-0 text-[10px] text-stone-300 whitespace-nowrap">{label.label}</span>}
-                </div>
-              );
-            })}
-          </div>
-          {/* Cells */}
-          {Array.from({ length: 7 }, (_, dayIdx) => (
-            <div key={dayIdx} className="flex gap-1.5">
-              {Array.from({ length: GRAPH_WEEKS }, (_, weekIdx) => (
+    <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
+      <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-5">Your practice rhythm</p>
+      <div className="flex items-end gap-2">
+        {months.map((m, i) => {
+          const filled  = m.count > 0;
+          const opacity = filled ? Math.max(0.35, m.count / maxCount) : 0;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-2">
+              {/* Bar */}
+              <div className="w-full rounded-md bg-stone-100 overflow-hidden" style={{ height: 48 }}>
                 <div
-                  key={weekIdx}
-                  className={`w-3.5 h-3.5 rounded-sm ${
-                    grid[weekIdx * 7 + dayIdx] ? 'bg-[#2B8FFF]/65' : 'bg-stone-100'
-                  }`}
+                  className="w-full rounded-md transition-all duration-500"
+                  style={{
+                    height: filled ? `${Math.max(30, (m.count / maxCount) * 48)}px` : '0px',
+                    background: `rgba(43,143,255,${opacity + 0.2})`,
+                    marginTop: 'auto',
+                  }}
                 />
-              ))}
+              </div>
+              {/* Month label */}
+              <span className="text-[10px] text-stone-400 font-medium">{m.label}</span>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -167,12 +142,12 @@ function ConsistencyGraph({ grid }: { grid: boolean[] }) {
 export default function HistoryPage() {
   const router = useRouter();
 
-  const [partners,       setPartners]       = useState<PartnerSummary[]>([]);
-  const [rhythm,         setRhythm]         = useState<RhythmData | null>(null);
-  const [grid,           setGrid]           = useState<boolean[]>([]);
-  const [showAll,        setShowAll]        = useState(false);
-  const [scheduleModal,  setScheduleModal]  = useState<string | null>(null);
-  const [reviewModal,    setReviewModal]    = useState<string | null>(null);
+  const [partners,      setPartners]      = useState<PartnerSummary[]>([]);
+  const [rhythm,        setRhythm]        = useState<RhythmData | null>(null);
+  const [months,        setMonths]        = useState<MonthBucket[]>([]);
+  const [showAll,       setShowAll]       = useState(false);
+  const [scheduleModal, setScheduleModal] = useState<string | null>(null);
+  const [reviewModal,   setReviewModal]   = useState<string | null>(null);
 
   useEffect(() => {
     const raw     = localStorage.getItem('mutua_history');
@@ -182,132 +157,128 @@ export default function HistoryPage() {
 
     setPartners(groupByPartner(sessions));
     setRhythm(computeRhythm(sessions, freq));
-    setGrid(buildConsistencyGrid(sessions, GRAPH_WEEKS));
+    setMonths(buildMonthlyData(sessions));
   }, []);
 
   if (!rhythm) return null;
 
   const { thisWeekSessions, thisWeekDone, weekGoal, weeksRunning } = rhythm;
-  const hasAnySessions = grid.some(v => v);
+  const hasAnySessions = months.some(m => m.count > 0);
   const visiblePartners = showAll ? partners : partners.slice(0, 3);
 
-  // Weekly rhythm text
+  // Weekly rhythm supporting line
   let rhythmLine = '';
-  if (thisWeekDone) {
-    rhythmLine = weeksRunning > 1 ? `${weeksRunning} weeks running` : '';
-  } else if (thisWeekSessions > 0) {
-    rhythmLine = weekGoal > 1 ? `${thisWeekSessions} of ${weekGoal} this week` : '';
-  } else if (weeksRunning >= 2) {
+  if (thisWeekDone && weeksRunning > 1) {
+    rhythmLine = `${weeksRunning} weeks running`;
+  } else if (!thisWeekDone && thisWeekSessions > 0 && weekGoal > 1) {
+    rhythmLine = `${thisWeekSessions} of ${weekGoal} sessions this week`;
+  } else if (!thisWeekDone && weeksRunning >= 2) {
     rhythmLine = `${weeksRunning}-week rhythm at risk`;
-  } else if (weeksRunning === 1) {
+  } else if (!thisWeekDone && weeksRunning === 1) {
     rhythmLine = 'keep your rhythm going';
   }
 
   return (
     <AppShell>
-      <main className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full">
+      <main className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full space-y-6">
 
-        {/* Page title — quiet */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-10">Progress</p>
-
-        {/* ── 1. Weekly Momentum — HERO ──────────────────────────── */}
-        <section className="mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-3">This week</p>
-
-          {/* Primary status — large serif */}
-          <p
-            className="font-serif font-bold text-[#171717] leading-none mb-2"
-            style={{ fontSize: 'clamp(2rem, 5vw, 2.5rem)' }}
-          >
-            {thisWeekDone ? '✓ Done' : 'Not yet'}
+        {/* Page title — matches Exchanges page */}
+        <div>
+          <h1 className="font-serif font-semibold text-2xl text-[#171717]">Progress</h1>
+          <p className="text-sm text-stone-400 mt-1">
+            {thisWeekDone ? 'You\'re on track this week.' : 'Keep your practice going.'}
           </p>
+        </div>
 
-          {/* Secondary rhythm line */}
-          {rhythmLine && (
-            <p className="text-base text-stone-400">{rhythmLine}</p>
-          )}
+        {/* ── 1. This week ─────────────────────────────────────── */}
+        <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
+          <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-4">This week</p>
 
-          {/* CTA — only when week is not complete */}
-          {!thisWeekDone && (
-            <button
-              onClick={() => partners.length > 0 ? setScheduleModal(partners[0].partnerName) : router.push('/app')}
-              className="mt-5 px-5 py-2.5 btn-primary text-white text-sm rounded-xl"
-            >
-              Schedule a session →
-            </button>
-          )}
-        </section>
-
-        {/* ── 2. Consistency graph — secondary ──────────────────── */}
-        {hasAnySessions && (
-          <section className="mb-14">
-            <ConsistencyGraph grid={grid} />
-          </section>
-        )}
-
-        {/* ── 3. Review your exchanges ───────────────────────────── */}
-        {partners.length > 0 && (
-          <section>
-            <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-1">Review your exchanges</p>
+          <div className="flex items-center justify-between gap-4">
             <div>
-              {visiblePartners.map((p, i) => (
-                <div
-                  key={p.partnerId || p.partnerName}
-                  className={`py-4 flex items-center gap-3 ${i < visiblePartners.length - 1 ? 'border-b border-stone-100' : ''}`}
-                >
+              <p className="font-serif font-semibold text-[#171717] text-xl leading-tight">
+                {thisWeekDone ? '✓ Done' : 'Not yet'}
+              </p>
+              {rhythmLine && (
+                <p className="text-sm text-stone-400 mt-1">{rhythmLine}</p>
+              )}
+            </div>
+            {!thisWeekDone && (
+              <button
+                onClick={() => partners.length > 0 ? setScheduleModal(partners[0].partnerName) : router.push('/app')}
+                className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl shrink-0"
+              >
+                Schedule a session →
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── 2. Monthly rhythm ────────────────────────────────── */}
+        {hasAnySessions && <MonthlyRhythm months={months} />}
+
+        {/* ── 3. Review your exchanges ─────────────────────────── */}
+        {partners.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Review your exchanges</p>
+
+            {visiblePartners.map(p => (
+              <div
+                key={p.partnerId || p.partnerName}
+                className="bg-white border border-stone-200 rounded-2xl px-6 py-5"
+              >
+                <div className="flex items-center gap-4">
                   {/* Avatar */}
-                  <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-stone-500">
+                  <div className="w-12 h-12 rounded-2xl bg-stone-800 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-white">
                       {p.partnerName.trim().slice(0, 2).toUpperCase()}
                     </span>
                   </div>
 
                   {/* Meta */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-neutral-700 leading-tight">{p.partnerName}</p>
-                    <p className="text-xs text-stone-400 mt-0.5">
+                    <p className="font-semibold text-[#171717] text-base leading-tight">{p.partnerName}</p>
+                    <p className="text-sm text-stone-400 mt-0.5">
                       Last: {formatDate(p.lastDate)} · {p.sessionCount} session{p.sessionCount === 1 ? '' : 's'}
                     </p>
                   </div>
-
-                  {/* CTAs */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    {/* Primary: Review — tracked */}
-                    <button
-                      onClick={() => {
-                        track('review_exchange_clicked', { partner_name: p.partnerName, session_count: p.sessionCount });
-                        setReviewModal(p.partnerName);
-                      }}
-                      className="text-xs font-semibold text-[#2B8FFF] hover:text-blue-700 transition-colors whitespace-nowrap"
-                    >
-                      Review exchange →
-                    </button>
-                    {/* Secondary: Schedule */}
-                    <button
-                      onClick={() => setScheduleModal(p.partnerName)}
-                      className="text-xs font-medium text-stone-400 hover:text-neutral-600 transition-colors whitespace-nowrap"
-                    >
-                      Schedule again
-                    </button>
-                  </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => {
+                      track('review_exchange_clicked', { partner_name: p.partnerName, session_count: p.sessionCount });
+                      setReviewModal(p.partnerName);
+                    }}
+                    className="px-4 py-2.5 btn-primary text-white text-sm font-semibold rounded-xl"
+                  >
+                    Review exchange →
+                  </button>
+                  <button
+                    onClick={() => setScheduleModal(p.partnerName)}
+                    className="px-4 py-2.5 border border-stone-200 text-sm font-medium text-stone-500 rounded-xl hover:bg-stone-50 transition-colors"
+                  >
+                    Schedule again
+                  </button>
+                </div>
+              </div>
+            ))}
 
             {partners.length > 3 && !showAll && (
               <button
                 onClick={() => setShowAll(true)}
-                className="mt-2 text-xs font-semibold text-stone-400 hover:text-neutral-700 transition-colors"
+                className="text-xs font-semibold text-stone-400 hover:text-neutral-700 transition-colors"
               >
                 View all →
               </button>
             )}
-          </section>
+          </div>
         )}
 
       </main>
 
-      {/* Review exchange modal */}
+      {/* Review modal */}
       {reviewModal && (
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 px-4 pb-6 sm:pb-0">
           <div className="bg-white rounded-2xl px-6 py-6 w-full max-w-sm space-y-4">
@@ -320,10 +291,7 @@ export default function HistoryPage() {
             <p className="text-sm text-stone-500 leading-relaxed">
               Session summaries, transcripts, and notes are on the way. You'll be able to review each exchange in detail soon.
             </p>
-            <button
-              onClick={() => setReviewModal(null)}
-              className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl"
-            >
+            <button onClick={() => setReviewModal(null)} className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl">
               Got it
             </button>
           </div>
@@ -339,16 +307,10 @@ export default function HistoryPage() {
               We'll match you with {scheduleModal} again using your current schedule.
             </p>
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => setScheduleModal(null)}
-                className="flex-1 py-3 btn-primary text-white font-bold rounded-xl text-sm"
-              >
+              <button onClick={() => setScheduleModal(null)} className="flex-1 py-3 btn-primary text-white font-bold rounded-xl text-sm">
                 Sounds good
               </button>
-              <button
-                onClick={() => router.push('/set-availability')}
-                className="flex-1 py-3 border border-stone-200 bg-white text-stone-500 font-medium rounded-xl text-sm hover:bg-stone-100 transition-colors"
-              >
+              <button onClick={() => router.push('/set-availability')} className="flex-1 py-3 border border-stone-200 bg-white text-stone-500 font-medium rounded-xl text-sm hover:bg-stone-100 transition-colors">
                 Update schedule
               </button>
             </div>
