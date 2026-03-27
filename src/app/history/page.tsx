@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import { track } from '@/lib/analytics';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -103,8 +103,12 @@ const GREETINGS: Record<string, string> = {
 interface DayData    { count: number; totalDuration: number; partners: string[]; }
 interface TooltipPos { key: string; x: number; y: number; }
 
-function RhythmChart({ sessions, targetLang, summary }: { sessions: SessionEntry[]; targetLang: string; summary: string | null }) {
-  const [tooltip, setTooltip] = useState<TooltipPos | null>(null);
+const SHIFT = 4; // weeks per arrow click
+const MAX_OFFSET = 52; // how far back you can go
+
+function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targetLang: string }) {
+  const [tooltip,    setTooltip]    = useState<TooltipPos | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0); // 0 = present, positive = further back
 
   // Aggregate per-day
   const dayMap = new Map<string, DayData>();
@@ -122,7 +126,11 @@ function RhythmChart({ sessions, targetLang, summary }: { sessions: SessionEntry
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const gridStart = getWeekStart(today);
+
+  // Shift the window back by weekOffset weeks
+  const windowEnd = getWeekStart(today);
+  windowEnd.setDate(windowEnd.getDate() - weekOffset * 7);
+  const gridStart = new Date(windowEnd);
   gridStart.setDate(gridStart.getDate() - (WEEKS - 1) * 7);
 
   const grid: { date: Date; key: string }[][] = Array.from({ length: WEEKS }, (_, w) =>
@@ -141,76 +149,133 @@ function RhythmChart({ sessions, targetLang, summary }: { sessions: SessionEntry
     }
   });
 
+  // Per-month totals for visible months
+  const monthTotals = monthLabels.map(ml => {
+    const ref   = grid[ml.col][0].date;
+    const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    const end   = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
+    const min   = sessions
+      .filter(s => { const d = new Date(s.date); return d >= start && d < end; })
+      .reduce((sum, s) => sum + (s.duration ?? 0), 0);
+    const count = sessions.filter(s => { const d = new Date(s.date); return d >= start && d < end; }).length;
+    return { ...ml, min, count };
+  });
+
+  const visibleTotal = monthTotals.reduce((sum, m) => sum + m.min, 0);
 
   const tooltipData = tooltip ? (dayMap.get(tooltip.key) ?? null) : null;
   const greeting    = GREETINGS[targetLang.toLowerCase()] ?? '';
 
+  const canGoBack    = weekOffset < MAX_OFFSET;
+  const canGoForward = weekOffset > 0;
+
+  // Arrow button style
+  const arrowCls = "flex items-center justify-center w-7 h-7 rounded-full text-stone-400 hover:text-neutral-700 hover:bg-stone-100 transition-colors shrink-0";
+
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
+    <div className="bg-white border border-stone-200 rounded-2xl px-4 py-5">
 
-      <div className="flex gap-2 min-w-0">
-        {/* Day-of-week labels */}
-        <div className="flex flex-col gap-1.5 shrink-0 mt-6">
-          {DAY_LABELS.map((l, i) => (
-            <div key={i} className="flex items-center" style={{ height: 'calc((100% - 6px * 6) / 7)' }}>
-              <span className="text-[10px] text-stone-400 font-medium w-3 text-right leading-none">
-                {i % 2 === 0 ? l : ''}
-              </span>
-            </div>
-          ))}
-        </div>
+      {/* ← grid → */}
+      <div className="flex items-center gap-1">
+        {/* Left arrow */}
+        <button
+          onClick={() => { setWeekOffset(o => Math.min(o + SHIFT, MAX_OFFSET)); setTooltip(null); }}
+          disabled={!canGoBack}
+          className={`${arrowCls} ${!canGoBack ? 'opacity-20 pointer-events-none' : ''}`}
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-        {/* Grid */}
-        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          {/* Month labels */}
-          <div className="h-5" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
-            {grid.map((_, wi) => {
-              const ml = monthLabels.find(m => m.col === wi);
-              return (
-                <div key={wi} className="flex items-center overflow-visible">
-                  {ml && <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap">{ml.label}</span>}
-                </div>
-              );
-            })}
+        {/* Day labels + grid */}
+        <div className="flex gap-1.5 flex-1 min-w-0">
+          {/* Day-of-week labels */}
+          <div className="flex flex-col gap-1.5 shrink-0 mt-5">
+            {DAY_LABELS.map((l, i) => (
+              <div key={i} className="flex items-center" style={{ height: 'calc((100% - 6px * 6) / 7)' }}>
+                <span className="text-[10px] text-stone-400 font-medium w-3 text-right leading-none">
+                  {i % 2 === 0 ? l : ''}
+                </span>
+              </div>
+            ))}
           </div>
 
-          {/* Day cells */}
-          {Array.from({ length: 7 }, (_, di) => (
-            <div key={di} style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
-              {grid.map((week, wi) => {
-                const { date, key } = week[di];
-                const isFuture = date > today;
-                const data     = isFuture ? null : (dayMap.get(key) ?? null);
-                let intensity  = 0;
-                if (data) {
-                  const dur = data.totalDuration;
-                  if      (dur >= 30)     intensity = 3;
-                  else if (dur >= 15)     intensity = 2;
-                  else if (dur >  0)      intensity = 1;
-                  else if (data.count >= 3) intensity = 3;
-                  else if (data.count >= 2) intensity = 2;
-                  else                    intensity = 1;
-                }
+          {/* Grid columns */}
+          <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            {/* Month labels */}
+            <div className="h-5" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
+              {grid.map((_, wi) => {
+                const ml = monthLabels.find(m => m.col === wi);
                 return (
-                  <div
-                    key={wi}
-                    className="rounded-[3px] aspect-square"
-                    style={{
-                      background: INTENSITY_COLORS[intensity],
-                      cursor: data ? 'default' : undefined,
-                    }}
-                    onMouseEnter={e => { if (data) setTooltip({ key, x: e.clientX, y: e.clientY }); }}
-                    onMouseLeave={() => setTooltip(null)}
-                  />
+                  <div key={wi} className="flex items-center overflow-visible">
+                    {ml && <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap">{ml.label}</span>}
+                  </div>
                 );
               })}
             </div>
-          ))}
+
+            {/* Day cells */}
+            {Array.from({ length: 7 }, (_, di) => (
+              <div key={di} style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
+                {grid.map((week, wi) => {
+                  const { date, key } = week[di];
+                  const isFuture = date > today;
+                  const data     = isFuture ? null : (dayMap.get(key) ?? null);
+                  let intensity  = 0;
+                  if (data) {
+                    const dur = data.totalDuration;
+                    if      (dur >= 30)       intensity = 3;
+                    else if (dur >= 15)       intensity = 2;
+                    else if (dur >  0)        intensity = 1;
+                    else if (data.count >= 3) intensity = 3;
+                    else if (data.count >= 2) intensity = 2;
+                    else                      intensity = 1;
+                  }
+                  return (
+                    <div
+                      key={wi}
+                      className="rounded-[3px] aspect-square"
+                      style={{ background: INTENSITY_COLORS[intensity], cursor: data ? 'default' : undefined }}
+                      onMouseEnter={e => { if (data) setTooltip({ key, x: e.clientX, y: e.clientY }); }}
+                      onMouseLeave={() => setTooltip(null)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+
+            {/* Per-month totals row */}
+            <div className="mt-1" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
+              {grid.map((_, wi) => {
+                const mt = monthTotals.find(m => m.col === wi);
+                return (
+                  <div key={wi} className="overflow-visible">
+                    {mt && (mt.min > 0 || mt.count > 0) && (
+                      <span className="text-[10px] text-stone-400 whitespace-nowrap">
+                        {mt.min > 0 ? `${mt.min}m` : `${mt.count}×`}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
+
+        {/* Right arrow */}
+        <button
+          onClick={() => { setWeekOffset(o => Math.max(0, o - SHIFT)); setTooltip(null); }}
+          disabled={!canGoForward}
+          className={`${arrowCls} ${!canGoForward ? 'opacity-20 pointer-events-none' : ''}`}
+          aria-label="Go forward"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {summary && (
-        <p className="text-xs text-stone-400 mt-4">{summary}</p>
+      {/* Total */}
+      {visibleTotal > 0 && (
+        <p className="text-xs text-stone-400 mt-3 text-right">{visibleTotal} min total</p>
       )}
 
       {/* Tooltip */}
@@ -267,12 +332,6 @@ export default function HistoryPage() {
   const hasAnySessions = sessions.length > 0;
   const visiblePartners = showAll ? partners : partners.slice(0, 3);
 
-  const totalMin = sessions.reduce((sum, s) => sum + (s.duration ?? 0), 0);
-  const rhythmSummary = totalMin > 0
-    ? `${totalMin} min in recent months`
-    : sessions.length > 0
-      ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} in recent months`
-      : null;
 
   // Weekly rhythm supporting line
   let rhythmLine = '';
@@ -327,7 +386,7 @@ export default function HistoryPage() {
         {hasAnySessions && (
           <div className="space-y-2">
             <p className="text-sm font-medium text-stone-500">Recent practice</p>
-            <RhythmChart sessions={sessions} targetLang={targetLang} summary={rhythmSummary} />
+            <RhythmChart sessions={sessions} targetLang={targetLang} />
           </div>
         )}
 
