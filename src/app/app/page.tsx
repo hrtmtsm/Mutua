@@ -218,7 +218,7 @@ function SchedulingCard({
                 onClick={() => isJoinable(partner.scheduledAt!, now) ? onJoin() : setShowNotYet(true)}
                 className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl"
               >
-                Join session →
+                Start exchange →
               </button>
             </div>
           </div>
