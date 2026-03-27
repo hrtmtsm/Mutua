@@ -241,6 +241,17 @@ export default function TopNav() {
   const [msgView, setMsgView]     = useState<'list' | 'chat'>('list');
   const inboxRef = useRef<HTMLDivElement>(null);
 
+  // Allow external components to open the chat directly
+  useEffect(() => {
+    const handler = () => {
+      setInboxOpen(true);
+      setInboxTab('messages');
+      setMsgView('chat');
+    };
+    window.addEventListener('mutua:open-chat', handler);
+    return () => window.removeEventListener('mutua:open-chat', handler);
+  }, []);
+
   // Shared message state loaded once when inbox opens
   const [matchId, setMatchId]               = useState<string | null>(null);
   const [partnerName, setPartnerName]       = useState('Partner');

@@ -170,7 +170,7 @@ function SchedulingCard({
                 <div className="fixed inset-0 z-40" onClick={() => setShowOverflow(false)} />
                 <div className="absolute right-0 top-9 z-50 bg-white rounded-xl shadow-lg border border-stone-100 py-1 w-44 text-sm">
                   <button onClick={() => { setShowOverflow(false); onViewProfile(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">View profile</button>
-                  {onMessage && <button onClick={() => { setShowOverflow(false); onMessage(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">Message</button>}
+                  <button onClick={() => { setShowOverflow(false); window.dispatchEvent(new Event('mutua:open-chat')); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">Say hi 👋</button>
                   <button onClick={() => { setShowOverflow(false); onReschedule(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">Reschedule</button>
                 </div>
               </>
