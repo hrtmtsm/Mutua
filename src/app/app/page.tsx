@@ -94,6 +94,8 @@ function SchedulingCard({
   onBookExchange,
   onViewProfile,
   onMessage,
+  myName,
+  myAvatarUrl,
 }: {
   partner:         PartnerCard;
   onReschedule:    () => void;
@@ -101,6 +103,8 @@ function SchedulingCard({
   onBookExchange:  () => void;
   onViewProfile:   () => void;
   onMessage?:      () => void;
+  myName?:         string;
+  myAvatarUrl?:    string | null;
 }) {
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
@@ -131,11 +135,30 @@ function SchedulingCard({
     return (
       <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
         {/* Header */}
-        <div className="px-6 pt-6 pb-5 flex items-start gap-4">
-          <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
-          <div className="flex-1 min-w-0 pt-0.5">
-            <p className="font-serif font-bold text-[#171717] text-2xl leading-tight">{partner.name}</p>
-            <div className="flex items-center gap-1.5 mt-1.5 text-sm">
+        <div className="px-6 pt-6 pb-5 flex items-center gap-4">
+          {/* Dual avatar */}
+          <div className="relative shrink-0 flex items-center" style={{ width: 88, height: 64 }}>
+            {/* Me — left, tilted */}
+            <div className="absolute left-0" style={{ transform: 'rotate(-6deg)', zIndex: 1 }}>
+              <Avatar name={myName ?? 'Me'} lang={partner.learningLang} avatarUrl={myAvatarUrl} size="md" />
+            </div>
+            {/* Star badge */}
+            <div className="absolute left-1/2 top-1/2 z-10" style={{ transform: 'translate(-50%, -50%)' }}>
+              <div className="w-5 h-5 rounded-full bg-white shadow flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 20 20" fill="#2B8FFF">
+                  <path d="M10 1l2.39 4.84 5.35.78-3.87 3.77.91 5.32L10 13.27l-4.78 2.51.91-5.32L2.26 6.62l5.35-.78z"/>
+                </svg>
+              </div>
+            </div>
+            {/* Partner — right, tilted */}
+            <div className="absolute right-0" style={{ transform: 'rotate(6deg)', zIndex: 1 }}>
+              <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="md" />
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
+            <div className="flex items-center gap-1.5 mt-1 text-sm">
               <span className="text-stone-500">{nativeFlag} {partner.nativeLang}</span>
               <span className="text-stone-300">→</span>
               <span className="text-[#2B8FFF] font-medium">{learningFlag} {partner.learningLang}</span>
@@ -298,10 +321,12 @@ function SchedulingCard({
 
 export default function SessionPage() {
   const router = useRouter();
-  const [partner,   setPartner]   = useState<PartnerCard | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [matchId,   setMatchId]   = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [partner,      setPartner]      = useState<PartnerCard | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [matchId,      setMatchId]      = useState<string | null>(null);
+  const [sessionId,    setSessionId]    = useState<string | null>(null);
+  const [myName,       setMyName]       = useState<string | undefined>();
+  const [myAvatarUrl,  setMyAvatarUrl]  = useState<string | null>(null);
 
   const loadMatch = useCallback(async (sid: string) => {
     try {
@@ -404,8 +429,18 @@ export default function SessionPage() {
       if (!sid) { router.replace('/onboarding'); return; }
       setSessionId(sid);
 
-      // Sync interests from localStorage → DB so partner can see them
+      // Load my own name + avatar
       const storedProfile = localStorage.getItem('mutua_profile');
+      if (storedProfile) {
+        try {
+          const p = JSON.parse(storedProfile);
+          if (p.name) setMyName(p.name);
+        } catch { /* ignore */ }
+      }
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      setMyAvatarUrl(`${supabaseUrl}/storage/v1/object/public/avatars/${sid}.jpg`);
+
+      // Sync interests from localStorage → DB so partner can see them
       if (storedProfile) {
         try {
           const p = JSON.parse(storedProfile);
@@ -510,6 +545,8 @@ export default function SessionPage() {
             onJoin={handleJoin}
             onBookExchange={handleBookExchange}
             onViewProfile={() => router.push(`/partner/${partner.matchId}`)}
+            myName={myName}
+            myAvatarUrl={myAvatarUrl}
           />
         ) : (
           <div className="bg-white/60 border border-stone-200 border-dashed rounded-2xl px-6 py-10 text-center">
@@ -545,6 +582,8 @@ export default function SessionPage() {
               scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
               iAmA: true, avatarUrl: null, sharedInterests: [], bio: undefined,
             }}
+            myName={myName ?? 'You'}
+            myAvatarUrl={myAvatarUrl}
             onReschedule={() => {}} onJoin={() => {}} onBookExchange={() => {}} onViewProfile={() => {}}
           />
         </div>
