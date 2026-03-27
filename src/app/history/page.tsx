@@ -156,7 +156,7 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
     <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Recent practice</p>
+          <p className="text-xs font-medium text-stone-400">Recent practice</p>
           <p className="text-[11px] text-stone-300 mt-0.5">Blue squares show days you practiced</p>
         </div>
         {summaryLine && <p className="text-xs text-stone-400 shrink-0 ml-4">{summaryLine}</p>}
@@ -303,7 +303,7 @@ export default function HistoryPage() {
 
         {/* ── 1. This week ─────────────────────────────────────── */}
         <div className="bg-white border border-stone-200 rounded-2xl px-7 py-6">
-          <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-4">This week</p>
+          <p className="text-xs font-medium text-stone-400 mb-4">This week</p>
 
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -331,7 +331,7 @@ export default function HistoryPage() {
         {/* ── 3. Review your exchanges ─────────────────────────── */}
         {partners.length > 0 && (
           <div className="space-y-3">
-            <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Review your exchanges</p>
+            <p className="text-xs font-medium text-stone-400">Review your exchanges</p>
 
             {visiblePartners.map(p => (
               <div
