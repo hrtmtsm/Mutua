@@ -93,25 +93,26 @@ function SchedulingCard({
   onJoin,
   onBookExchange,
   onViewProfile,
+  onMessage,
 }: {
   partner:         PartnerCard;
   onReschedule:    () => void;
   onJoin:          () => void;
   onBookExchange:  () => void;
   onViewProfile:   () => void;
+  onMessage?:      () => void;
 }) {
   const nativeFlag   = LANG_FLAGS[partner.nativeLang]   ?? '';
   const learningFlag = LANG_FLAGS[partner.learningLang] ?? '';
 
-  const [showPicker, setShowPicker] = useState(false);
-  const [showNotYet, setShowNotYet] = useState(false);
+  const [showNotYet,  setShowNotYet]  = useState(false);
+  const [showOverflow, setShowOverflow] = useState(false);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
 
-  // Determine my pending state
   const s = partner.schedulingState;
   const iNeedToSet =
     s === 'pending_both' ||
@@ -121,6 +122,89 @@ function SchedulingCard({
     (s === 'pending_a' && !partner.iAmA) ||
     (s === 'pending_b' && partner.iAmA);
 
+  // ── Scheduled state: focused card ─────────────────────────────────────────
+  if (s === 'scheduled' && partner.scheduledAt) {
+    const sessionDate = new Date(partner.scheduledAt);
+    const dateLine = sessionDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const timeLine = sessionDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    return (
+      <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-5 flex items-start gap-4">
+          <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="font-serif font-bold text-[#171717] text-2xl leading-tight">{partner.name}</p>
+            <div className="flex items-center gap-1.5 mt-1.5 text-sm">
+              <span className="text-stone-500">{nativeFlag} {partner.nativeLang}</span>
+              <span className="text-stone-300">→</span>
+              <span className="text-[#2B8FFF] font-medium">{learningFlag} {partner.learningLang}</span>
+            </div>
+          </div>
+          {/* Three-dot overflow */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowOverflow(v => !v)}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-400"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="3" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/>
+              </svg>
+            </button>
+            {showOverflow && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowOverflow(false)} />
+                <div className="absolute right-0 top-9 z-50 bg-white rounded-xl shadow-lg border border-stone-100 py-1 w-44 text-sm">
+                  <button onClick={() => { setShowOverflow(false); onViewProfile(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">View profile</button>
+                  {onMessage && <button onClick={() => { setShowOverflow(false); onMessage(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">Message</button>}
+                  <button onClick={() => { setShowOverflow(false); onReschedule(); }} className="w-full px-4 py-2.5 text-left text-neutral-700 hover:bg-stone-50">Reschedule</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Date */}
+        <div className="px-6 pb-6">
+          <p className="font-serif font-bold text-[#171717] text-3xl leading-tight">{dateLine}</p>
+          <p className="text-stone-400 text-base mt-1">{timeLine}</p>
+        </div>
+
+        {/* CTA */}
+        <div className="px-6 pb-6">
+          <button
+            onClick={() => isJoinable(partner.scheduledAt!, now) ? onJoin() : setShowNotYet(true)}
+            className="w-full py-3 btn-primary text-white text-sm rounded-xl"
+          >
+            Start exchange →
+          </button>
+        </div>
+
+        {showNotYet && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
+            <div className="bg-white rounded-2xl p-7 max-w-sm w-full space-y-4 shadow-xl">
+              <div>
+                <p className="font-semibold text-neutral-900 text-base">Session not started yet</p>
+                <p className="text-sm text-stone-500 mt-1 leading-relaxed">
+                  Your session with <span className="font-medium text-neutral-700">{partner.name}</span> begins on{' '}
+                  <span className="font-medium text-neutral-700">{fmtScheduledAt(partner.scheduledAt!)}</span>.
+                  Come back then to join.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowNotYet(false)}
+                className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── All other states: full card ────────────────────────────────────────────
   return (
     <div className="overflow-hidden bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
 
@@ -137,9 +221,6 @@ function SchedulingCard({
             </div>
           </div>
           <div className="shrink-0">
-            {s === 'scheduled' && (
-              <span className="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full block">Scheduled</span>
-            )}
             {waitingOnPartner && (
               <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full block">Waiting</span>
             )}
@@ -171,7 +252,6 @@ function SchedulingCard({
         </div>
       </div>
 
-      {/* State-driven footer */}
       {iNeedToSet && (
         <div className="px-6 pb-6">
           <button onClick={onBookExchange} className="w-full py-3 btn-primary text-white text-sm rounded-xl">
@@ -201,49 +281,6 @@ function SchedulingCard({
             Update my availability →
           </button>
         </div>
-      )}
-
-      {s === 'scheduled' && partner.scheduledAt && (
-        <>
-          <div className="px-6 pb-6 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium text-stone-400">First session</p>
-              <p className="font-semibold text-neutral-800 text-sm mt-1">{fmtScheduledAt(partner.scheduledAt)}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={onReschedule} className="px-4 py-2.5 border border-stone-200 bg-white text-sm text-neutral-500 font-medium rounded-xl hover:bg-stone-50 transition-colors">
-                Reschedule
-              </button>
-              <button
-                onClick={() => isJoinable(partner.scheduledAt!, now) ? onJoin() : setShowNotYet(true)}
-                className="px-5 py-2.5 btn-primary text-white text-sm rounded-xl"
-              >
-                Start exchange →
-              </button>
-            </div>
-          </div>
-
-          {showNotYet && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
-              <div className="bg-white rounded-2xl p-7 max-w-sm w-full space-y-4 shadow-xl">
-                <div>
-                  <p className="font-semibold text-neutral-900 text-base">Session not started yet</p>
-                  <p className="text-sm text-stone-500 mt-1 leading-relaxed">
-                    Your session with <span className="font-medium text-neutral-700">{partner.name}</span> begins on{' '}
-                    <span className="font-medium text-neutral-700">{fmtScheduledAt(partner.scheduledAt!)}</span>.
-                    Come back then to join.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowNotYet(false)}
-                  className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl"
-                >
-                  Got it
-                </button>
-              </div>
-            </div>
-          )}
-        </>
       )}
 
     </div>
@@ -472,6 +509,39 @@ export default function SessionPage() {
             <p className="text-sm text-stone-400">No partners yet — we'll email you when we find a match.</p>
           </div>
         )}
+
+        {/* ── DEV PREVIEW: both card states ── */}
+        <div className="mt-10 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-300">Preview — unscheduled</p>
+          <SchedulingCard
+            partner={{
+              matchId: 'test-1', id: 'p1', name: 'Sofia Reyes',
+              nativeLang: 'Spanish', learningLang: 'English',
+              goal: 'Conversational', commStyle: 'Casual', frequency: 'Weekly',
+              reasons: [], schedulingState: 'pending_both', scheduledAt: null,
+              iAmA: true, avatarUrl: null,
+              sharedInterests: ['Travel', 'Music'],
+              bio: 'Software engineer based in Mexico City. I love hiking and indie music.',
+            }}
+            onReschedule={() => {}} onJoin={() => {}} onBookExchange={() => {}} onViewProfile={() => {}}
+          />
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-stone-300">Preview — scheduled</p>
+          <SchedulingCard
+            partner={{
+              matchId: 'test-2', id: 'p2', name: 'Sofia Reyes',
+              nativeLang: 'Spanish', learningLang: 'English',
+              goal: 'Conversational', commStyle: 'Casual', frequency: 'Weekly',
+              reasons: [], schedulingState: 'scheduled',
+              scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+              iAmA: true, avatarUrl: null, sharedInterests: [], bio: undefined,
+            }}
+            onReschedule={() => {}} onJoin={() => {}} onBookExchange={() => {}} onViewProfile={() => {}}
+          />
+        </div>
+        {/* ── end DEV PREVIEW ── */}
 
       </main>
 
