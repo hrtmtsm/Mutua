@@ -386,19 +386,19 @@ export default function TopNav() {
         </Link>
 
         {/* Nav links — desktop only */}
-        <nav className="hidden md:flex items-center gap-4 flex-1 ml-8">
+        <nav className="hidden md:flex items-center gap-1 flex-1 ml-8">
           {DESKTOP_NAV.map(({ href, label, icon: Icon, match }) => {
             const active = match.some(p => pathname === p || pathname.startsWith(p + '/'));
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-0.5 py-1 transition-colors ${
+                className={`flex items-center gap-2 px-4 py-1.5 text-sm font-semibold transition-colors rounded-full ${
                   active ? 'text-neutral-900' : 'text-stone-400 hover:text-neutral-700'
                 }`}
               >
-                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
-                <span className="text-[10px] font-semibold">{label}</span>
+                <Icon className="w-4 h-4" strokeWidth={active ? 2.5 : 1.8} />
+                {label}
               </Link>
             );
           })}
