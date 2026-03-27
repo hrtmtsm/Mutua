@@ -88,7 +88,7 @@ function computeRhythm(sessions: SessionEntry[], freq: string): RhythmData {
 
 // ── GitHub-style consistency grid ────────────────────────────────────────────
 
-const WEEKS = 20;
+const WEEKS = 52; // one full year
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 // 4-level intensity: 0 = empty, 1 = light, 2 = medium, 3 = strong
@@ -103,8 +103,8 @@ const GREETINGS: Record<string, string> = {
 interface DayData    { count: number; totalDuration: number; partners: string[]; }
 interface TooltipPos { key: string; x: number; y: number; }
 
-const SHIFT = 4; // weeks per arrow click
-const MAX_OFFSET = 52; // how far back you can go
+const SHIFT      = 52;  // one year per arrow click
+const MAX_OFFSET = 260; // up to 5 years back
 
 function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targetLang: string }) {
   const [tooltip,    setTooltip]    = useState<TooltipPos | null>(null);
@@ -142,10 +142,17 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
   );
 
   const monthLabels: { col: number; label: string }[] = [];
+  let lastLabeledYear = -1;
   grid.forEach((week, wi) => {
     const firstDay = week[0].date;
     if (wi === 0 || firstDay.getDate() <= 7) {
-      monthLabels.push({ col: wi, label: firstDay.toLocaleDateString('en-US', { month: 'short' }) });
+      const month = firstDay.toLocaleDateString('en-US', { month: 'short' });
+      const year  = firstDay.getFullYear();
+      // Show year on Jan or whenever the year changes within the view
+      const showYear = year !== lastLabeledYear && (firstDay.getMonth() === 0 || wi === 0);
+      if (showYear) lastLabeledYear = year;
+      const label = showYear ? `${month} '${String(year).slice(2)}` : month;
+      monthLabels.push({ col: wi, label });
     }
   });
 
