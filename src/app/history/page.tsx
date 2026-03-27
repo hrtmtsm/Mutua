@@ -141,15 +141,12 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
     }
   });
 
-  // Single summary line
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonth  = sessions.filter(s => new Date(s.date) >= monthStart);
-  const totalMin   = thisMonth.reduce((sum, s) => sum + (s.duration ?? 0), 0);
+  // Single summary line — scope matches the visible grid range, not just this month
+  const totalMin  = sessions.reduce((sum, s) => sum + (s.duration ?? 0), 0);
   const summaryLine = totalMin > 0
-    ? `${totalMin} min practiced this month`
-    : thisMonth.length > 0
-      ? `${thisMonth.length} session${thisMonth.length !== 1 ? 's' : ''} this month`
+    ? `${totalMin} min in recent months`
+    : sessions.length > 0
+      ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} in recent months`
       : null;
 
   const tooltipData = tooltip ? (dayMap.get(tooltip.key) ?? null) : null;
@@ -157,9 +154,12 @@ function RhythmChart({ sessions, targetLang }: { sessions: SessionEntry[]; targe
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
-      <div className="flex items-baseline justify-between mb-4">
-        <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Your practice rhythm</p>
-        {summaryLine && <p className="text-xs text-stone-400">{summaryLine}</p>}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <p className="text-xs font-medium text-stone-400 uppercase tracking-widest">Recent practice</p>
+          <p className="text-[11px] text-stone-300 mt-0.5">Blue squares show days you practiced</p>
+        </div>
+        {summaryLine && <p className="text-xs text-stone-400 shrink-0 ml-4">{summaryLine}</p>}
       </div>
 
       <div className="flex gap-2 min-w-0">
