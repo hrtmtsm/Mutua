@@ -257,7 +257,7 @@ function SchedulingCard({
       {/* Context block — bio */}
       {partner.bio && (
         <div className="px-7 mt-4">
-          <p className="text-sm text-stone-500 leading-relaxed">{partner.bio}</p>
+          <p className="text-sm text-neutral-700 leading-relaxed">{partner.bio}</p>
         </div>
       )}
 
