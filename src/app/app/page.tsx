@@ -137,27 +137,17 @@ function SchedulingCard({
         {/* Header */}
         <div className="px-6 pt-6 pb-5 flex items-center gap-4">
           {/* Dual avatar */}
-          <div className="relative shrink-0 flex items-center" style={{ width: 88, height: 64 }}>
-            {/* Me — left, tilted */}
+          <div className="relative shrink-0 flex items-center" style={{ width: 104, height: 64 }}>
             <div className="absolute left-0" style={{ transform: 'rotate(-6deg)', zIndex: 1 }}>
-              <Avatar name={myName ?? 'Me'} lang={partner.learningLang} avatarUrl={myAvatarUrl} size="md" />
+              <Avatar name={myName ?? 'Me'} lang={partner.learningLang} avatarUrl={myAvatarUrl} size="lg" />
             </div>
-            {/* Star badge */}
-            <div className="absolute left-1/2 top-1/2 z-10" style={{ transform: 'translate(-50%, -50%)' }}>
-              <div className="w-5 h-5 rounded-full bg-white shadow flex items-center justify-center">
-                <svg width="10" height="10" viewBox="0 0 20 20" fill="#2B8FFF">
-                  <path d="M10 1l2.39 4.84 5.35.78-3.87 3.77.91 5.32L10 13.27l-4.78 2.51.91-5.32L2.26 6.62l5.35-.78z"/>
-                </svg>
-              </div>
-            </div>
-            {/* Partner — right, tilted */}
-            <div className="absolute right-0" style={{ transform: 'rotate(6deg)', zIndex: 1 }}>
-              <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="md" />
+            <div className="absolute right-0" style={{ transform: 'rotate(6deg)', zIndex: 2 }}>
+              <Avatar name={partner.name} lang={partner.nativeLang} avatarUrl={partner.avatarUrl} size="lg" />
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="font-serif font-bold text-[#171717] text-xl leading-tight">{partner.name}</p>
+            <p className="font-serif font-bold text-[#171717] text-2xl leading-tight">{partner.name}</p>
             <div className="flex items-center gap-1.5 mt-1 text-sm">
               <span className="text-stone-500">{nativeFlag} {partner.nativeLang}</span>
               <span className="text-stone-300">→</span>
