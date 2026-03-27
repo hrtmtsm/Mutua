@@ -88,7 +88,7 @@ function computeRhythm(sessions: SessionEntry[], freq: string): RhythmData {
 
 // ── GitHub-style consistency grid ────────────────────────────────────────────
 
-const WEEKS = 12; // columns
+const WEEKS = 20; // columns — fills card width at max-w-3xl
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
@@ -127,28 +127,28 @@ function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
     <div className="bg-white border border-stone-200 rounded-2xl px-6 py-5">
       <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-4">Your practice rhythm</p>
 
-      <div className="flex gap-2">
-        {/* Day-of-week labels */}
-        <div className="flex flex-col gap-1.5 mr-0.5 mt-6">
+      <div className="flex gap-2 min-w-0">
+        {/* Day-of-week labels — height synced to grid rows via gap-1.5 */}
+        <div className="flex flex-col gap-1.5 shrink-0 mt-6">
           {DAY_LABELS.map((l, i) => (
-            <div key={i} className="h-4 flex items-center">
-              <span className="text-[10px] text-stone-400 font-medium w-3 text-center leading-none">
+            <div key={i} className="flex items-center" style={{ height: 'calc((100% - 6px * 6) / 7)' }}>
+              <span className="text-[10px] text-stone-400 font-medium w-3 text-right leading-none">
                 {i % 2 === 0 ? l : ''}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Grid */}
-        <div className="flex flex-col gap-1.5 flex-1">
+        {/* Grid — stretches to fill remaining width */}
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           {/* Month labels row */}
-          <div className="flex gap-1.5 h-5">
+          <div className="h-5" style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}>
             {grid.map((_, wi) => {
               const ml = monthLabels.find(m => m.col === wi);
               return (
-                <div key={wi} className="w-4 flex items-center">
+                <div key={wi} className="flex items-center overflow-visible">
                   {ml && (
-                    <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap -ml-0.5">
+                    <span className="text-[10px] text-stone-400 font-medium whitespace-nowrap">
                       {ml.label}
                     </span>
                   )}
@@ -157,27 +157,28 @@ function RhythmChart({ sessions }: { sessions: SessionEntry[] }) {
             })}
           </div>
 
-          {/* Day cells: render row by row (Mon–Sun) */}
+          {/* Day cells: each row is a CSS grid so columns fill width; aspect-square keeps cells square */}
           {Array.from({ length: 7 }, (_, di) => (
-            <div key={di} className="flex gap-1.5">
+            <div
+              key={di}
+              style={{ display: 'grid', gridTemplateColumns: `repeat(${WEEKS}, 1fr)`, gap: '6px' }}
+            >
               {grid.map((week, wi) => {
                 const { date, key } = week[di];
                 const isFuture = date > today;
                 const n = counts.get(key) ?? 0;
                 let bg: string;
-                if (isFuture) {
-                  bg = '#E5E5E5'; // neutral-200, same as empty so future doesn't look special
-                } else if (n === 0) {
-                  bg = '#E5E5E5'; // neutral-200 — visible but not dominant
+                if (isFuture || n === 0) {
+                  bg = '#E5E5E5';
                 } else if (n === 1) {
                   bg = '#60A5FA'; // blue-400
                 } else {
-                  bg = '#2563EB'; // blue-600 — clearly more active
+                  bg = '#2563EB'; // blue-600
                 }
                 return (
                   <div
                     key={wi}
-                    className="w-4 h-4 rounded-[3px]"
+                    className="rounded-[3px] aspect-square"
                     style={{ background: bg }}
                   />
                 );
