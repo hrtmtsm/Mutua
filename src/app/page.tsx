@@ -59,14 +59,8 @@ export default function LandingPage() {
                 href="/auth/send"
                 className="flex flex-col items-center px-4 py-2 rounded-xl text-white border border-white/40 hover:bg-white/10 transition-all"
               >
-                <span className="text-sm font-bold leading-tight">Sign up</span>
-                <span className="text-[10px] text-white/70 leading-tight">Create an account to see your match</span>
-              </Link>
-              <Link
-                href="/onboarding"
-                className="text-sm font-bold px-5 py-2 rounded-xl btn-primary text-white shadow"
-              >
-                Start speaking
+                <span className="text-sm font-bold leading-tight">Sign in</span>
+                <span className="text-[10px] text-white/70 leading-tight">Access your account</span>
               </Link>
             </div>
           </nav>
@@ -81,12 +75,9 @@ export default function LandingPage() {
             <p className="text-white/80 text-lg md:text-xl max-w-sm mx-auto mb-8 mt-6 leading-relaxed">
               Stop searching. Start speaking.
             </p>
-            <Link
-              href="/onboarding"
-              className="inline-block px-10 py-4 btn-primary text-white font-bold text-base rounded-xl shadow-xl"
-            >
-              Start speaking &rarr;
-            </Link>
+            <p className="inline-block px-8 py-4 bg-white/20 backdrop-blur-sm text-white font-semibold text-base rounded-xl border border-white/30">
+              Currently invite-only — we'll reach out soon.
+            </p>
           </div>
         </section>
 
