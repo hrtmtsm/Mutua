@@ -5,8 +5,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://trymutua.com';
 
-function emailHtml(): string {
-  const signInUrl = `${APP_URL}/auth/send`;
+function emailHtml(sessionId?: string): string {
+  const signInUrl = sessionId
+    ? `${APP_URL}/auth/restore?sid=${sessionId}`
+    : `${APP_URL}/auth/send`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -72,14 +74,14 @@ function emailHtml(): string {
 }
 
 export async function POST(request: Request) {
-  const { email } = await request.json();
+  const { email, sessionId } = await request.json();
   if (!email) return NextResponse.json({ error: 'email required' }, { status: 400 });
 
   const { error: sendError } = await resend.emails.send({
     from: 'Mutua <hello@trymutua.com>',
     to: email,
     subject: 'Your language partner is here 🎉',
-    html: emailHtml(),
+    html: emailHtml(sessionId),
   });
 
   if (sendError) return NextResponse.json({ error: sendError.message }, { status: 500 });

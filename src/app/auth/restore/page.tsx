@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, getMatchBySessionId } from '@/lib/supabase';
 import { initAnalytics, identifyUser, track } from '@/lib/analytics';
 
 export default function AuthRestorePage() {
@@ -18,7 +18,7 @@ export default function AuthRestorePage() {
       .select('*')
       .eq('session_id', sid)
       .maybeSingle()
-      .then(({ data: profile }) => {
+      .then(async ({ data: profile }) => {
         if (profile) {
           localStorage.setItem('mutua_session_id', profile.session_id);
           localStorage.setItem('mutua_profile', JSON.stringify(profile));
@@ -28,7 +28,9 @@ export default function AuthRestorePage() {
             learning_language: profile.learning_language,
           });
           track('waitlist_activated');
-          router.replace('/find-match');
+          // Go to app if already matched, otherwise find-match
+          const match = await getMatchBySessionId(profile.session_id);
+          router.replace(match ? '/app' : '/find-match');
         } else {
           setError(true);
         }

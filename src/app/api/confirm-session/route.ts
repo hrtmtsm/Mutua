@@ -6,8 +6,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://trymutua.com';
 
-function emailHtml(partnerName: string, scheduledTime: string): string {
-  const signInUrl = `${APP_URL}/auth/send`;
+function emailHtml(partnerName: string, scheduledTime: string, partnerSessionId?: string): string {
+  const signInUrl = partnerSessionId
+    ? `${APP_URL}/auth/restore?sid=${partnerSessionId}`
+    : `${APP_URL}/auth/send`;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -76,7 +78,7 @@ function emailHtml(partnerName: string, scheduledTime: string): string {
 }
 
 export async function POST(request: Request) {
-  const { matchId, partnerEmail, partnerName, scheduledTime, confirmerName } = await request.json();
+  const { matchId, partnerEmail, partnerName, partnerSessionId, scheduledTime, confirmerName } = await request.json();
   if (!matchId || !partnerEmail || !scheduledTime) {
     return NextResponse.json({ error: 'matchId, partnerEmail, scheduledTime required' }, { status: 400 });
   }
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     from: 'Mutua <hello@trymutua.com>',
     to: partnerEmail,
     subject: `${displayName} confirmed your first session`,
-    html: emailHtml(displayName, scheduledTime),
+    html: emailHtml(displayName, scheduledTime, partnerSessionId),
   });
 
   if (sendError) return NextResponse.json({ success: true, emailSent: false });

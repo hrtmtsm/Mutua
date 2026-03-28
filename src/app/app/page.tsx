@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, getMatchBySessionId, type Match, type SchedulingState } from '@/lib/supabase';
 import { LANG_FLAGS, LANG_AVATAR_COLOR, INTEREST_CATEGORIES, INTEREST_MIGRATION } from '@/lib/constants';
+import type { SavedPartner } from '@/lib/types';
 import { track } from '@/lib/analytics';
 import AppShell from '@/components/AppShell';
 import { ArrowLeftRight } from 'lucide-react';
@@ -194,26 +195,41 @@ function SchedulingCard({
           </button>
         </div>
 
-        {showNotYet && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
-            <div className="bg-white rounded-2xl p-7 max-w-sm w-full space-y-4 shadow-xl">
-              <div>
-                <p className="font-semibold text-neutral-900 text-base">Session not started yet</p>
-                <p className="text-sm text-stone-500 mt-1 leading-relaxed">
-                  Your session with <span className="font-medium text-neutral-700">{partner.name}</span> begins on{' '}
-                  <span className="font-medium text-neutral-700">{fmtScheduledAt(partner.scheduledAt!)}</span>.
-                  Come back then to join.
-                </p>
+        {showNotYet && (() => {
+          const sessionMs = new Date(partner.scheduledAt!).getTime();
+          const isPast = Date.now() - sessionMs > 60 * 60 * 1000;
+          return (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
+              <div className="bg-white rounded-2xl p-7 max-w-sm w-full space-y-4 shadow-xl">
+                <div>
+                  <p className="font-semibold text-neutral-900 text-base">
+                    {isPast ? 'Session has passed' : 'Session not started yet'}
+                  </p>
+                  <p className="text-sm text-stone-500 mt-1 leading-relaxed">
+                    {isPast
+                      ? <>Your session with <span className="font-medium text-neutral-700">{partner.name}</span> on <span className="font-medium text-neutral-700">{fmtScheduledAt(partner.scheduledAt!)}</span> has ended. You can reschedule a new time.</>
+                      : <>Your session with <span className="font-medium text-neutral-700">{partner.name}</span> begins on <span className="font-medium text-neutral-700">{fmtScheduledAt(partner.scheduledAt!)}</span>. Come back then to join.</>
+                    }
+                  </p>
+                </div>
+                {isPast ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowNotYet(false)} className="flex-1 py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl">
+                      Dismiss
+                    </button>
+                    <button onClick={() => { setShowNotYet(false); onReschedule(); }} className="flex-1 py-3 btn-primary text-white font-semibold text-sm rounded-xl">
+                      Reschedule →
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowNotYet(false)} className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl">
+                    Got it
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => setShowNotYet(false)}
-                className="w-full py-3 bg-stone-100 hover:bg-stone-200 transition-colors text-neutral-700 font-semibold text-sm rounded-xl"
-              >
-                Got it
-              </button>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     );
   }
@@ -365,11 +381,20 @@ export default function SessionPage() {
       if (card.schedulingState === 'scheduled' && !localStorage.getItem(`mutua_autoconfirmed_${m.id}`)) {
         localStorage.setItem(`mutua_autoconfirmed_${m.id}`, '1');
         const myName = (() => { try { return JSON.parse(localStorage.getItem('mutua_profile') ?? '{}').name ?? ''; } catch { return ''; } })();
-        fetch('/api/confirm-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ matchId: m.id, partnerEmail: '', scheduledTime: card.scheduledAt ? new Date(card.scheduledAt).toLocaleString() : '', confirmerName: myName }),
-        }).catch(() => {});
+        const partnerEmail = isA ? (m.email_b ?? '') : (m.email_a ?? '');
+        if (partnerEmail) {
+          fetch('/api/confirm-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              matchId: m.id,
+              partnerEmail,
+              partnerSessionId: partnerSessionId,
+              scheduledTime: card.scheduledAt ? new Date(card.scheduledAt).toLocaleString() : '',
+              confirmerName: myName,
+            }),
+          }).catch(() => {});
+        }
       }
       if (card.schedulingState === 'scheduled' && card.scheduledAt) {
         localStorage.setItem('mutua_last_notification', JSON.stringify({
@@ -510,7 +535,22 @@ export default function SessionPage() {
     router.push(`/set-availability?${params.toString()}`);
   };
 
-  const handleJoin = () => router.push('/pre-session');
+  const handleJoin = () => {
+    if (partner) {
+      const savedPartner: SavedPartner = {
+        partner_id:          partner.id,
+        name:                partner.name,
+        native_language:     partner.nativeLang as SavedPartner['native_language'],
+        learning_language:   partner.learningLang as SavedPartner['learning_language'],
+        goal:                partner.goal as SavedPartner['goal'],
+        comm_style:          partner.commStyle as SavedPartner['comm_style'],
+        practice_frequency:  partner.frequency as SavedPartner['practice_frequency'],
+        saved_at:            new Date().toISOString(),
+      };
+      localStorage.setItem('mutua_current_partner', JSON.stringify(savedPartner));
+    }
+    router.push('/pre-session');
+  };
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
