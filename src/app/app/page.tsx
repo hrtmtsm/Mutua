@@ -457,12 +457,15 @@ export default function SessionPage() {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       setMyAvatarUrl(`${supabaseUrl}/storage/v1/object/public/avatars/${sid}.jpg`);
 
-      // Sync interests from localStorage → DB so partner can see them
+      // Sync name + interests from localStorage → DB so partner can see them
       if (storedProfile) {
         try {
           const p = JSON.parse(storedProfile);
-          if (p.interests) {
-            supabase.from('profiles').update({ interests: p.interests }).eq('session_id', sid).then(() => {});
+          const updates: Record<string, string> = {};
+          if (p.name)      updates.name      = p.name;
+          if (p.interests) updates.interests = p.interests;
+          if (Object.keys(updates).length > 0) {
+            supabase.from('profiles').update(updates).eq('session_id', sid).then(() => {});
           }
         } catch { /* ignore */ }
       }
